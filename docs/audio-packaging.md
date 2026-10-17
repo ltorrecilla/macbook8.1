@@ -11,7 +11,7 @@
 
 ## Why installation is still blocked
 
-1. The original root installer depends on files absent from the collected snapshot: `efi_recover.py`, `mb81-resume-recover.service` and `mb81-jack-switch.service`. Some support scripts are present, but a complete recovery procedure cannot yet be distributed.
+1. **Previously missing files recovered:** `efi_recover.py`, `mb81-resume-recover.service` and `mb81-jack-switch.service` were captured and matched by SHA-256 against their installed counterparts. The code still needs safety and compatibility review, especially direct PCI/MMIO access in `efi_recover.py` and the suspend recovery service. See [support recovery audit](audio-support-recovery.md).
 2. The original scripts use Ubuntu `update-initramfs`, not CachyOS's `mkinitcpio`. DKMS and module-load ordering must be integrated and verified before reboot.
 3. The build helper downloads an upstream kernel tarball without verifying a pinned checksum. A matching kernel source and ABI checks are needed for every CachyOS kernel.
 4. The original DKMS remove script deletes state files directly and can remove modules not owned by the installer. Reversible removal must use DKMS's own restoration mechanisms and verify the original modules.
@@ -43,12 +43,18 @@ The staging program extracts only the 18 expected source/config files, writes SH
 - Verified speaker, headphone, suspend/resume, kernel upgrade, uninstall and reinstall on at least one clean test installation.
 - No equalizer preset by default; keep working `MacBook_Speaker_Raw` sound.
 
-## Collect the three missing support files
+## Verify the recovered support files
 
-Your audio-source archive did not contain `efi_recover.py`, `mb81-resume-recover.service`, or `mb81-jack-switch.service`. To look for those exact filenames in likely locations without root privileges:
+The support files have now been recovered on the test MacBook. New contributors can use this collector to locate the same files on their own setup:
 
 ```bash
 bash scripts/collect-audio-support.sh
 ```
 
-This writes `macbook81-audio-support.tar.gz` locally. The archive includes paths and code, so review its contents for private information before sharing. The script performs no changes to kernel modules, audio configuration, or services. If these dependencies cannot be recovered, verified replacement implementations are required before release.
+This writes `macbook81-audio-support.tar.gz` locally. The archive includes paths and code, so review its contents for private information before sharing. The script performs no changes to kernel modules, audio configuration, or services. Use the [offline two-archive audit](../scripts/audit-audio-bundles.py) to verify both local archives without extracting or executing code:
+
+```bash
+python3 scripts/audit-audio-bundles.py --audio-details /path/to/macbook81-audio-details.tar.gz --audio-support /path/to/macbook81-audio-support.tar.gz
+```
+
+The audit confirms structural consistency only; **it does not make the old installer safe**. Tests: `python3 -m unittest discover -s tests -p 'test_audit_audio_bundles.py'`.
