@@ -24,3 +24,21 @@ The owner's MacBook8,1 has patched CS4208/HDA DKMS modules and a four-channel `M
 Keyboard/trackpad and Bluetooth work on the original laptop, but universal installers have **not** been validated. Battery reporting and printing remain unresolved. Do not copy per-kernel `initcall_blacklist` arguments or ACPI DSDT binary files to other machines without validation.
 
 Original scripts and documentation are MIT-licensed. Linux kernel-derived future code must preserve upstream licenses and credits.
+
+## Audio installer development (read-only preparation)
+
+The working CS4208 driver snapshot has been recovered, but **public installation is not yet safe**. It replaces three kernel HDA modules, and the original installer is missing suspend/headphone support files and assumes Ubuntu initramfs tooling. Do not run its old install/removal scripts on a working CachyOS installation.
+
+Check your current system without changing it:
+
+```bash
+bash scripts/audio-preflight.sh
+```
+
+Stage the 18 known source/config files from **your own** collector archive without installing:
+
+```bash
+python3 scripts/stage-audio-source.py /path/to/macbook81-audio-details.tar.gz ./local-audio-stage
+```
+
+Read [the detailed audio packaging plan](docs/audio-packaging.md) before sharing any staged kernel source. Automated tests can run using `python3 -m unittest discover -s tests -p 'test_stage_audio_source.py'`.
