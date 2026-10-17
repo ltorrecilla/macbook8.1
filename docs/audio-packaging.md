@@ -42,3 +42,13 @@ The staging program extracts only the 18 expected source/config files, writes SH
 - Correct `mkinitcpio` integration, reboot-safe load ordering, non-destructive rollback.
 - Verified speaker, headphone, suspend/resume, kernel upgrade, uninstall and reinstall on at least one clean test installation.
 - No equalizer preset by default; keep working `MacBook_Speaker_Raw` sound.
+
+## Collect the three missing support files
+
+Your audio-source archive did not contain `efi_recover.py`, `mb81-resume-recover.service`, or `mb81-jack-switch.service`. To look for those exact filenames in likely locations without root privileges:
+
+```bash
+bash scripts/collect-audio-support.sh
+```
+
+This writes `macbook81-audio-support.tar.gz` locally. The archive includes paths and code, so review its contents for private information before sharing. The script performs no changes to kernel modules, audio configuration, or services. If these dependencies cannot be recovered, verified replacement implementations are required before release.
