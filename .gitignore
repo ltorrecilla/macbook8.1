@@ -1,0 +1,6 @@
+macbook81-diagnostics*.txt
+macbook81-audio-evidence*.txt
+*.tar.gz
+*.log
+*.orig
+*.rej
