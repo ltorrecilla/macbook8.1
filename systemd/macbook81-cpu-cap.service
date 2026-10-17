@@ -1,0 +1,15 @@
+# Managed by macbook81-starter. Do not edit in place: reinstall to change profile.
+[Unit]
+Description=MacBook8,1 opt-in CPU frequency maximum
+Documentation=man:cpupower-frequency-set(1)
+After=cpupower.service
+ConditionPathExists=/etc/macbook81-cpu-cap.max-khz
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/libexec/macbook81-cpu-cap apply
+ExecStop=/usr/local/libexec/macbook81-cpu-cap restore
+
+[Install]
+WantedBy=multi-user.target
