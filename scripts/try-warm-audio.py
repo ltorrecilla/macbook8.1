@@ -50,17 +50,44 @@ def reload_filter():
     run("systemctl", "--user", "try-restart", "wireplumber.service", check=False)
     wait_for_audio()
 
-def build_variant(original):
+def build_variant(original, voice=False):
     updated = original
     for name in ("L_peq1", "R_peq1"):
         pattern = (r"(\bname\s*=\s*" + re.escape(name) +
                    r'\s+label\s*=\s*bq_peaking\s*\n\s*control\s*=\s*\{'
                    r'\s*"Freq"\s*=\s*258\.0\s+"Q"\s*=\s*0\.79\s+'
                    r'"Gain"\s*=\s*)0\.0\b')
-        updated, count = re.subn(pattern, lambda m: m.group(1) + "2.5", updated)
+        updated, count = re.subn(pattern, lambda m: m.group(1) + ("4.0" if voice else "2.5"), updated)
+        if voice and count == 1:
+            # Shift the SAME filter's centre frequency from 258 to 185 Hz.
+            frequency = (r'(\bname\s*=\s*' + re.escape(name)
+                         + r'\s+label\s*=\s*bq_peaking\s+control\s*=\s*\{\s*"Freq"\s*=\s*)258\.0')
+            updated, fcount = re.subn(frequency, lambda m: m.group(1) + "185.0", updated)
+            if fcount != 1:
+                raise RuntimeError(f"Could not retune {name} to 185 Hz.")
         if count != 1:
             raise RuntimeError(f"Expected one {name} gain=0.0 filter; found {count}. No change made.")
     return updated
+
+def switch_output(target):
+    """Switch output and move ordinary PulseAudio app streams, not filter links."""
+    run("pactl", "set-default-sink", target)
+    detail = run("pactl", "list", "sink-inputs", capture=True).stdout
+    moved = 0
+    for block in re.split(r"(?=^Sink Input #\d+\s*$)", detail, flags=re.M):
+        match = re.search(r"^Sink Input #(\d+)\s*$", block, re.M)
+        if not match or "node.link-group =" in block or 'node.group = "filter-chain-' in block:
+            continue
+        app = re.search(r'application\.name = "([^"]+)"', block)
+        if not app or app.group(1).lower() in ("pipewire", "wireplumber"):
+            continue
+        result = run("pactl", "move-sink-input", match.group(1), target, check=False)
+        if result.returncode == 0:
+            moved += 1
+    print(f"Selected {target}; moved {moved} running PulseAudio app stream(s).")
+    print("If playback is still on the other device, choose the output for that app")
+    print("in Plasma Sound > Applications, or restart playback.")
+
 
 def restore():
     if not BACKUP.is_file():
@@ -72,7 +99,7 @@ def restore():
     if DEFAULT.is_file():
         old = DEFAULT.read_text().strip()
         if old:
-            run("pactl", "set-default-sink", old)
+            switch_output(old)
             print("Original default sink restored:", old)
     BACKUP.unlink()
     DEFAULT.unlink(missing_ok=True)
@@ -82,12 +109,12 @@ def restore():
         pass
     print("Original EQ settings restored.")
 
-def audition():
+def audition(voice=False):
     if BACKUP.exists():
         raise RuntimeError("Previous audition backup exists. Run --restore first; refusing to overwrite it.")
     if not CONFIG.is_file() or CONFIG.is_symlink():
         raise RuntimeError(f"Expected a regular PipeWire EQ config at {CONFIG}")
-    variant = build_variant(CONFIG.read_text())
+    variant = build_variant(CONFIG.read_text(), voice=voice)
     wait_for_audio()
     old_sink = run("pactl", "get-default-sink", capture=True).stdout.strip()
     current_sinks = run("pactl", "list", "short", "sinks", capture=True).stdout
@@ -103,16 +130,28 @@ def audition():
         reload_filter()
         if EQ_SINK not in run("pactl", "list", "short", "sinks", capture=True).stdout:
             raise RuntimeError("EQ sink did not reappear after restart")
-        run("pactl", "set-default-sink", EQ_SINK)
-        print("\nWarm audition active: +2.5 dB at 258 Hz, unchanged protective high-pass filters.")
-        print("Use familiar music at LOW volume; match perceived loudness when comparing.")
-        print("Do not edit the PipeWire configuration while this audition is active.")
-        input("\nPress Enter to restore original EQ config and default sink: ")
+        print("\nAudio audition active: " + ("+4 dB at 185 Hz (voice)" if voice else "+2.5 dB at 258 Hz (warm)"))
+        print("Both original high-pass speaker protection filters are unchanged.")
+        print("Lower volume first to 25–35%. Compare a familiar spoken voice at matched loudness.")
+        print("Enter e for modified EQ, r for original raw, q to quit and restore.")
+        print("Do not edit the PipeWire configuration while the audition is active.")
+        switch_output(EQ_SINK)
+        while True:
+            choice = input("Choose [e/r/q]: ").strip().lower()
+            if choice == "e":
+                switch_output(EQ_SINK)
+            elif choice == "r":
+                switch_output("MacBook_Speaker_Raw")
+            elif choice in ("q", ""):
+                break
+            else:
+                print("Please enter e, r or q.")
     finally:
         restore()
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--voice", action="store_true", help="Audition +4 dB at 185 Hz to give spoken voices more body")
     parser.add_argument("--restore", action="store_true",
                         help="Recover config from an interrupted earlier audition")
     args = parser.parse_args()
@@ -120,7 +159,7 @@ def main():
     if args.restore:
         restore()
     else:
-        audition()
+        audition(voice=args.voice)
 
 if __name__ == "__main__":
     try:
