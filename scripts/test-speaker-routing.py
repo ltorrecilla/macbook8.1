@@ -25,6 +25,18 @@ TESTS = (
     ("RIGHT pair FR+RR in phase — compare fullness", 230, (0, 1, 0, 1)),
     ("RIGHT pair FR+RR opposite phase — compare fullness", 230, (0, 1, 0, -1)),
 )
+# Retest at a known audible frequency and isolate the lower-frequency case.
+# Use --bass-follow-up; the default 8-test sequence remains unchanged.
+FOLLOWUP_TESTS = (
+    ("FL alone, reference at 490 Hz", 490, (1, 0, 0, 0)),
+    ("FL alone, bass at 230 Hz", 230, (1, 0, 0, 0)),
+    ("FR alone, reference at 490 Hz", 490, (0, 1, 0, 0)),
+    ("FR alone, bass at 230 Hz", 230, (0, 1, 0, 0)),
+    ("LEFT FL+RL in phase at 490 Hz", 490, (1, 0, 1, 0)),
+    ("LEFT FL+RL opposite phase at 490 Hz", 490, (1, 0, -1, 0)),
+    ("RIGHT FR+RR in phase at 490 Hz", 490, (0, 1, 0, 1)),
+    ("RIGHT FR+RR opposite phase at 490 Hz", 490, (0, 1, 0, -1)),
+)
 
 
 def write_raw_pcm(path: Path, frequency: int, gains: tuple[int, int, int, int], seconds=1.3) -> None:
@@ -58,9 +70,12 @@ def self_test() -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--self-test", action="store_true", help="Check sample layout without playing audio")
+    parser.add_argument("--bass-follow-up", action="store_true",
+                        help="At 490 Hz, compare phase; at 230 Hz, isolate single-channel audibility")
     args = parser.parse_args()
     if args.self_test:
         return self_test()
+    tests = FOLLOWUP_TESTS if args.bass_follow_up else TESTS
     if os.geteuid() == 0:
         parser.error("Run as your normal desktop user, not with sudo")
     if not sys.stdin.isatty():
@@ -72,15 +87,18 @@ def main() -> int:
         if probe.returncode or TARGET not in probe.stdout:
             parser.error(f"Could not find sink {TARGET}; current audio setup may differ")
     print("\nMacBook8,1 speaker routing check (8 quiet tests)")
+    if args.bass_follow_up:
+        print("Follow-up: compare FL/FR at 490 vs 230 Hz, then paired channels at 490 Hz.")
+        print("If 230 Hz remains silent, it may be attenuated by the speakers or audio path.")
     print("This does not change your default sink, PipeWire configuration, or driver.")
     print("Keep system volume modest. Stop if audio distorts or is uncomfortable.")
     print("For each tone, note the physical side and whether it sounds full or thin.\n")
     with tempfile.TemporaryDirectory(prefix="mb81-audio-test-") as tmp:
         p = Path(tmp) / "test.raw"
-        for i, (label, frequency, gains) in enumerate(TESTS, 1):
+        for i, (label, frequency, gains) in enumerate(tests, 1):
             cmd = ["pw-play", "--raw", "--rate=44100", "--format=s16", "--channels=4",
                    "--channel-map=FL,FR,RL,RR", f"--target={TARGET}", "--volume=0.35", str(p)]
-            print(f"[{i}/{len(TESTS)}] {label} ({frequency} Hz)")
+            print(f"[{i}/{len(tests)}] {label} ({frequency} Hz)")
             answer = input("Press Enter to play, or type q then Enter to stop: ").strip().lower()
             if answer in ("q", "quit", "exit"):
                 print("Stopped. No configuration changes made.")
@@ -92,7 +110,10 @@ def main() -> int:
                 print(f"Playback failed: {exc}", file=sys.stderr)
                 return 1
             print()
-    print("Done. Note whether each channel sounded and which phase pairing was fuller.")
+    if args.bass_follow_up:
+        print("Done. Report each test as audible / very faint / silent / playback error.")
+    else:
+        print("Done. Note whether each channel sounded and which phase pairing was fuller.")
     return 0
 
 
