@@ -42,3 +42,7 @@ python3 scripts/stage-audio-source.py /path/to/macbook81-audio-details.tar.gz ./
 ```
 
 Read [the detailed audio packaging plan](docs/audio-packaging.md) before sharing any staged kernel source. Automated tests can run using `python3 -m unittest discover -s tests -p 'test_stage_audio_source.py'`.
+
+### Recovered audio support files (October 2026)
+
+The missing codec recovery and suspend/headphone systemd service files have now been collected; their installed and source copies match. See [support-file analysis](docs/audio-support-recovery.md) and [offline archive audit](scripts/audit-audio-bundles.py). **The audio installation procedure is still blocked** by unsafe legacy DKMS cleanup, Ubuntu-only initramfs handling, and untested low-level recovery/rollback. Do not run the recovered legacy installers. Progress is tracked in [Issue #2](https://github.com/ltorrecilla/macbook8.1/issues/2).
