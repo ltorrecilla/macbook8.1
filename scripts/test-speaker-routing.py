@@ -38,6 +38,19 @@ FOLLOWUP_TESTS = (
     ("RIGHT FR+RR opposite phase at 490 Hz", 490, (0, 1, 0, -1)),
 )
 
+# Recheck the user's original silent paired 230 Hz tests against individual
+# channels in the same session, at the same source amplitude.
+BASS_PAIR_TESTS = (
+    ("FL alone at 230 Hz", 230, (1, 0, 0, 0)),
+    ("RL alone at 230 Hz", 230, (0, 0, 1, 0)),
+    ("LEFT FL+RL in phase at 230 Hz", 230, (1, 0, 1, 0)),
+    ("LEFT FL+RL opposite phase at 230 Hz", 230, (1, 0, -1, 0)),
+    ("FR alone at 230 Hz", 230, (0, 1, 0, 0)),
+    ("RR alone at 230 Hz", 230, (0, 0, 0, 1)),
+    ("RIGHT FR+RR in phase at 230 Hz", 230, (0, 1, 0, 1)),
+    ("RIGHT FR+RR opposite phase at 230 Hz", 230, (0, 1, 0, -1)),
+)
+
 
 def write_raw_pcm(path: Path, frequency: int, gains: tuple[int, int, int, int], seconds=1.3) -> None:
     """Four-channel signed 16-bit PCM at 44.1 kHz; ~-20 dBFS peak per channel."""
@@ -70,12 +83,16 @@ def self_test() -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--self-test", action="store_true", help="Check sample layout without playing audio")
+    parser.add_argument("--bass-pairs-230", action="store_true",
+                        help="Repeat individual and paired channels all at 230 Hz")
     parser.add_argument("--bass-follow-up", action="store_true",
                         help="At 490 Hz, compare phase; at 230 Hz, isolate single-channel audibility")
     args = parser.parse_args()
     if args.self_test:
         return self_test()
-    tests = FOLLOWUP_TESTS if args.bass_follow_up else TESTS
+    if args.bass_follow_up and args.bass_pairs_230:
+        parser.error('Choose only one diagnostic mode')
+    tests = BASS_PAIR_TESTS if args.bass_pairs_230 else (FOLLOWUP_TESTS if args.bass_follow_up else TESTS)
     if os.geteuid() == 0:
         parser.error("Run as your normal desktop user, not with sudo")
     if not sys.stdin.isatty():
@@ -87,11 +104,15 @@ def main() -> int:
         if probe.returncode or TARGET not in probe.stdout:
             parser.error(f"Could not find sink {TARGET}; current audio setup may differ")
     print("\nMacBook8,1 speaker routing check (8 quiet tests)")
+    if args.bass_pairs_230:
+        print("Same-frequency follow-up: compare single and paired channels at 230 Hz.")
+        print("Record audible, faint, or silent; note which phase pair sounds fuller.")
     if args.bass_follow_up:
         print("Follow-up: compare FL/FR at 490 vs 230 Hz, then paired channels at 490 Hz.")
         print("If 230 Hz remains silent, it may be attenuated by the speakers or audio path.")
     print("This does not change your default sink, PipeWire configuration, or driver.")
     print("Keep system volume modest. Stop if audio distorts or is uncomfortable.")
+    ratings = []
     print("For each tone, note the physical side and whether it sounds full or thin.\n")
     with tempfile.TemporaryDirectory(prefix="mb81-audio-test-") as tmp:
         p = Path(tmp) / "test.raw"
@@ -109,8 +130,18 @@ def main() -> int:
             except (subprocess.CalledProcessError, OSError) as exc:
                 print(f"Playback failed: {exc}", file=sys.stderr)
                 return 1
+            if args.bass_pairs_230:
+                rating = input("Heard [a=audible, f=faint, s=silent, q=quit]: ").strip().lower()
+                if rating == "q":
+                    break
+                ratings.append((i, label, {"a":"audible", "f":"faint", "s":"silent"}.get(rating,"unspecified")))
             print()
-    if args.bass_follow_up:
+    if args.bass_pairs_230:
+        print("Results to share:")
+        for i, label, rating in ratings:
+            print(f"{i}. {label}: {rating}")
+        print("Also say whether the in-phase or opposite-phase pair sounded fuller on each side.")
+    elif args.bass_follow_up:
         print("Done. Report each test as audible / very faint / silent / playback error.")
     else:
         print("Done. Note whether each channel sounded and which phase pairing was fuller.")
