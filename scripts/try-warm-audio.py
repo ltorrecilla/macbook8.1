@@ -89,18 +89,48 @@ def switch_output(target):
     print("in Plasma Sound > Applications, or restart playback.")
 
 
+def sink_available(name):
+    """Match the sink's exact PipeWire/Pulse name, not a substring of a line."""
+    result = run("pactl", "list", "short", "sinks", capture=True, check=False)
+    if result.returncode != 0:
+        return False
+    return any(len(fields := line.split()) > 1 and fields[1] == name
+               for line in result.stdout.splitlines())
+
+
+def wait_for_sink(name, seconds=15):
+    for _ in range(max(1, int(seconds * 2))):
+        if sink_available(name):
+            return True
+        time.sleep(0.5)
+    return sink_available(name)
+
+
 def restore():
     if not BACKUP.is_file():
         print("No previous audition backup found; nothing to restore.")
         return
     print("Restoring original PipeWire EQ configuration...")
-    shutil.copy2(BACKUP, CONFIG)
-    reload_filter()
+    # An interrupted restore may already have copied the config successfully.
+    # Do not restart PipeWire unnecessarily or overwrite the backup.
+    if not CONFIG.is_file() or CONFIG.read_bytes() != BACKUP.read_bytes():
+        shutil.copy2(BACKUP, CONFIG)
+        reload_filter()
+    else:
+        print("Original EQ configuration is already in place; not restarting PipeWire.")
     if DEFAULT.is_file():
         old = DEFAULT.read_text().strip()
         if old:
-            switch_output(old)
+            if not wait_for_sink(old):
+                print("Original EQ configuration is restored, but the previous")
+                print(f"default output ({old}) is not available yet.")
+                print("Backup retained; do NOT start another audition.")
+                print("Check: pactl list short sinks")
+                print("Check: systemctl --user status wireplumber --no-pager")
+                raise RuntimeError("Saved default audio sink is unavailable; backup preserved")
+            run("pactl", "set-default-sink", old)
             print("Original default sink restored:", old)
+    # Only remove the backup after the saved default has been restored.
     BACKUP.unlink()
     DEFAULT.unlink(missing_ok=True)
     try:
