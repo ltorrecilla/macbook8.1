@@ -146,3 +146,13 @@ Identity checks recorded by the prior analyses:
 - Routing phone capture SHA-256: `e7fb91390eb3be4183364e0828bc7a3aafce8da4aabb42ad33a0a8db5538198c`.
 
 This checkpoint publishes summarized findings and public-source references only. It does not publish recordings, unreviewed source archives, personal session identifiers, full system dumps, or firmware. Earlier chronological docs may contain superseded 'missing file' or 'next test' statements; use this checkpoint and Issues #1/#2 to resume.
+
+## 9. Camera follow-up — 2026-10-18
+
+The owner reported `MacBook8,1`, kernel `7.2.9-2-cachyos`, matching `linux-cachyos` / `linux-cachyos-headers` packages at `7.2.9-2`, DKMS `3.4.3-1`, and Broadcom camera PCI ID `14e4:1570`. Initially, the `facetimehd` module, firmware directory, and video device class were missing.
+
+After the manual installation of upstream `facetimehd` release `0.7.2` (its native DKMS version is `0.7.0.1`) and firmware `5.60.0` with sensor calibration files including `1675_01XX.dat`, the owner confirmed a **normal moving image** in `mpv av://v4l2:/dev/video0`. The reported mode was `848x588` at 30 fps. Mesa/pixel-conversion and shutdown buffer messages appeared in that successful run.
+
+**Remaining camera task:** another, unnamed camera app reports no devices. Its exact name/version and installation method are unknown. Close `mpv`, fully reopen the app, then obtain `v4l2-ctl --list-devices`, `wpctl status`, and `fuser -v /dev/video0` if it still fails. These outputs have not yet been supplied. Do not mark PipeWire, browser, or Flatpak camera compatibility as solved, and do not change the working audio stack to guess at an app-discovery fix.
+
+See [the camera guide](camera.md) and the optional `scripts/install-camera.sh`, `scripts/check-camera.sh`, and `scripts/uninstall-camera.sh` helpers. They pin the working upstream driver/firmware combination and preserve unrelated installations. The wrappers are newly added and have not been run on the physical laptop; the existing manual installation needs only the diagnostic check. Reboot, suspend/resume, and rebuilding through a kernel update remain unverified. This camera addition does not change the audio continuation plan above.

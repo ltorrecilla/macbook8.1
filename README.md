@@ -23,6 +23,18 @@ bash scripts/check-cpu-limit.sh
 
 Try 1300 (cooler/slower), 1600 (balanced default), or 2000 MHz (more headroom). Check again after reboot and suspend/resume: the latter is not yet automated. Remove with `sudo bash scripts/uninstall-cpu-limit.sh`. See [CPU details](docs/cpu-frequency-limit.md).
 
+## Camera (live capture verified; app discovery still open)
+
+The owner confirmed a moving image in `mpv` on MacBook8,1 with CachyOS `7.2.9-2-cachyos`, upstream `facetimehd` release `0.7.2`, firmware `5.60.0`, and sensor calibration `1675_01XX.dat`. The reported mode was `848x588` at 30 fps. An unnamed camera app still reports no devices, so general application compatibility is **not yet confirmed**.
+
+If the camera already works in `mpv`, check the existing installation without reinstalling:
+
+```sh
+bash scripts/check-camera.sh
+```
+
+For a new installation, follow [the camera guide](docs/camera.md) to install prerequisites and matching kernel headers, then run `bash scripts/install-camera.sh` as your ordinary user. The optional installer pins upstream revisions, uses DKMS, and checks driver ownership and firmware hashes. The hardware result came from the preceding manual procedure; these new wrappers still need a physical installation test. Reboot, suspend/resume, kernel updates, and browser/Flatpak use have not been verified. The guide also explains the unresolved app discovery checks and removal of a wrapper-owned installation.
+
 ## Audio (not installable yet)
 
 The owner's MacBook8,1 has patched CS4208/HDA DKMS modules and a four-channel `MacBook_Speaker_Raw` PipeWire sink. Bass quality is still being investigated. The local driver source, configuration and previously missing support files have been recovered; a reproducible public installer has not been validated. See the [current checkpoint](docs/continuation-checkpoint.md) before repeating diagnostics. New contributors can use `bash scripts/collect-audio-evidence.sh` or `bash scripts/collect-audio-details.sh`, then inspect the produced report/archive for private data before sharing. See [Audio details](docs/audio.md).
