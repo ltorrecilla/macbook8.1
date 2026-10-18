@@ -2,13 +2,34 @@
 
 Experimental hardware support for the 12-inch MacBook (Early 2015). This project is not yet a complete one-command hardware installer.
 
-## Resume the investigation here
+## Fix tracker
+
+**Latest recorded results: 2026-10-18.** **Working** means the owner confirmed that behavior on the original MacBook8,1. **Open** means a resolution is not yet confirmed. Installer availability and reboot, suspend/resume, kernel-update, and other-machine validation are tracked separately.
+
+| Fix / area | Current result on the owner's MacBook | Repository support | Next action |
+|---|---|---|---|
+| CPU frequency limit | **Working:** initial frequency cap confirmed. | [Installer, checker, and removal helper](docs/cpu-frequency-limit.md). | Verify the cap after reboot, suspend/resume, and a kernel update. A frequency cap is not a temperature guarantee. |
+| Camera capture | **Working in `mpv`:** moving image, reported `848x588` at 30 fps. | [Camera guide and helpers](docs/camera.md); new wrappers have simulated tests, but no physical installation test yet. | Validate a fresh wrapper installation and reboot/resume/update behavior; the existing manual setup needs only the diagnostic check. |
+| Camera discovery in other apps | **Open:** another, unnamed camera app reports no devices. | [Application discovery checks](docs/camera.md#application-discovery-still-open). | Record the app name/version and installation source; close `mpv`, retry, then inspect the recorded V4L2/PipeWire/device-user diagnostics. |
+| Audio playback | **Working:** patched HDA/CS4208 modules and `MacBook_Speaker_Raw` produce sound. | [Working baseline and evidence](docs/continuation-checkpoint.md#1-last-established-baseline); diagnostic, staging, and audit helpers. | Use this working baseline for the sound-quality and installer work below. |
+| Audio sound quality | **Open:** bass/tonal balance still differs from macOS. | [Full EQ comparison plan](docs/audio-upstream-comparison.md), [Issue #1](https://github.com/ltorrecilla/macbook8.1/issues/1). | Compare the complete upstream EQ offline with controlled gain; the earlier recordings and routing tests are already documented. |
+| Reusable audio installer | **Open:** sources and support files recovered; public installation is not validated. | [Packaging plan](docs/audio-packaging.md), [Issue #2](https://github.com/ltorrecilla/macbook8.1/issues/2). | Complete provenance/license review, CachyOS integration, safe rollback, and clean-install/reboot/resume/update validation. |
+| Keyboard and trackpad | **Working:** owner confirmed operation after the boot-parameter workaround. | Reported result recorded here; no validated reusable installer. | Document the exact procedure and verify persistence without treating per-kernel symbols as portable. |
+| Bluetooth | **Working:** owner confirmed pairing after the ACPI/DSDT workaround. | Reported result recorded here; no validated reusable installer. | Document a machine-appropriate procedure and verify reboot/resume behavior. |
+| Battery reporting | **Open:** reported charge state and percentage disagree. | No confirmed fix published. | Continue diagnosis of the contradictory battery readings. |
+| Brother DCP-9020CDW printing | **Open:** last CUPS output showed no configured print destinations. | No confirmed fix published. | Complete printer-queue setup and confirm a physical test page. |
+| Custom keyboard shortcuts | **Open:** input-remapper still required manual launch/application each session. | No confirmed persistent solution published. | Establish and verify mappings that apply automatically at login. |
+| Limine boot-usage warning | **Open:** boot-usage limit warning reported with no snapshot entries. | No confirmed fix published. | Inspect boot filesystem usage and snapshot configuration, then confirm a targeted correction. |
+
+When a result changes, update this table and its linked guide or checkpoint with the date, kernel, what was actually tested, and the next action. Mark persistence or another-machine compatibility verified only after recording that test. A published helper or passing simulated test does not by itself close a hardware issue.
+
+## Continue the investigations
 
 **[Continuation checkpoint — 2026-10-18](docs/continuation-checkpoint.md)** records the working baseline, completed listening/recording tests, recovery lessons, remaining installer work, and the exact next experiment.
 
-Latest lead: [full upstream MacBook8,1 EQ and source comparison](docs/audio-upstream-comparison.md). The full profile is **not yet tested or installed**. Channel duplication mainly increased recorded volume, not bass balance. Keep the working driver and `MacBook_Speaker_Raw` unchanged; the next comparison is planned as offline-rendered audio with controlled gain, not a driver replacement.
+Audio next step: [full upstream MacBook8,1 EQ and source comparison](docs/audio-upstream-comparison.md). The full profile is **not yet tested or installed**. Channel duplication mainly increased recorded volume, not bass balance. Keep the working driver and `MacBook_Speaker_Raw` unchanged; the next comparison is planned as offline-rendered audio with controlled gain, not a driver replacement.
 
-Sound quality: [Issue #1](https://github.com/ltorrecilla/macbook8.1/issues/1). Reversible audio packaging: [Issue #2](https://github.com/ltorrecilla/macbook8.1/issues/2). This checkpoint changes documentation only and does not publish personal recordings or full system dumps.
+Sound quality: [Issue #1](https://github.com/ltorrecilla/macbook8.1/issues/1). Reversible audio packaging: [Issue #2](https://github.com/ltorrecilla/macbook8.1/issues/2). The checkpoint preserves the completed work and next steps for these separate tasks.
 
 ## CPU frequency limit (tested on one MacBook8,1)
 
@@ -41,7 +62,7 @@ The owner's MacBook8,1 has patched CS4208/HDA DKMS modules and a four-channel `M
 
 ## Other fixes
 
-Keyboard/trackpad and Bluetooth work on the original laptop, but universal installers have **not** been validated. Battery reporting and printing remain unresolved. Do not copy per-kernel `initcall_blacklist` arguments or ACPI DSDT binary files to other machines without validation.
+Keyboard/trackpad and Bluetooth work on the original laptop, but universal installers have **not** been validated. The tracker above also records the unresolved battery, printing, shortcut, and boot-warning tasks. Do not copy per-kernel `initcall_blacklist` arguments or ACPI DSDT binary files to other machines without validation.
 
 Original scripts and documentation are MIT-licensed. Linux kernel-derived future code must preserve upstream licenses and credits.
 
