@@ -4,16 +4,17 @@ Experimental hardware support for the 12-inch MacBook (Early 2015). This project
 
 ## Fix tracker
 
-**Latest recorded results: 2026-10-19.** **Working** means the owner confirmed that behavior on the original MacBook8,1. **Open** means a resolution is not yet confirmed. Installer availability and reboot, suspend/resume, kernel-update, and other-machine validation are tracked separately.
+**Latest repository update: 2026-10-20.** **Working** means the owner confirmed that behavior on the original MacBook8,1. **Open** means a resolution is not yet confirmed. Installer availability and reboot, suspend/resume, kernel-update, and other-machine validation are tracked separately.
 
 | Fix / area | Current result on the owner's MacBook | Repository support | Next action |
 |---|---|---|---|
 | CPU frequency limit | **Working:** initial frequency cap confirmed. | [Installer, checker, and removal helper](docs/cpu-frequency-limit.md). | Verify the cap after reboot, suspend/resume, and a kernel update. A frequency cap is not a temperature guarantee. |
 | Camera capture | **Working in `mpv`:** moving image, reported `848x588` at 30 fps. | [Camera guide and helpers](docs/camera.md); new wrappers have simulated tests, but no physical installation test yet. | Validate a fresh wrapper installation and reboot/resume/update behavior; the existing manual setup needs only the diagnostic check. |
 | Camera discovery in other apps | **Open:** another, unnamed camera app reports no devices. | [Application discovery checks](docs/camera.md#application-discovery-still-open). | Record the app name/version and installation source; close `mpv`, retry, then inspect the recorded V4L2/PipeWire/device-user diagnostics. |
-| Audio playback | **Working:** patched HDA/CS4208 modules and `MacBook_Speaker_Raw` produce sound. | [Working baseline and evidence](docs/continuation-checkpoint.md#1-last-established-baseline); diagnostic, staging, and audit helpers. | Use this working baseline for the sound-quality and installer work below. |
-| Audio sound quality | **Open:** bass/tonal balance still differs from macOS. | [Full EQ comparison plan](docs/audio-upstream-comparison.md), [Issue #1](https://github.com/ltorrecilla/macbook8.1/issues/1). | Compare the complete upstream EQ offline with controlled gain; the earlier recordings and routing tests are already documented. |
-| Reusable audio installer | **Open:** sources and support files recovered; public installation is not validated. | [Packaging plan](docs/audio-packaging.md), [Issue #2](https://github.com/ltorrecilla/macbook8.1/issues/2). | Complete provenance/license review, CachyOS integration, safe rollback, and clean-install/reboot/resume/update validation. |
+| Audio playback | **Working again:** owner confirmed recovery targeting `7.2.11-1-cachyos`; Raw remains preferred. | [Latest recovery findings](docs/audio-update-recovery.md); existing three-module driver. | Keep the recovered configuration unchanged while resuming EQ work. |
+| Audio after kernel updates | **Manual recovery confirmed; unattended reliability open.** Missing per-kernel builds, compiler mismatch, and source-download failure were separate problems. | [Recovery/check helper](scripts/repair-audio.py) and [guide](docs/audio-update-recovery.md); 28 simulated tests. | Run the read-only check now. The new wrapper still needs a real MacBook recovery/update-cycle test. |
+| Audio sound quality | **Open:** tonal balance still differs from macOS; live EQ previously sounded worse than Raw. | [Latest EQ handoff](docs/audio-update-recovery.md#eq-resume-without-repeating-completed-tests), [full-profile plan](docs/audio-upstream-comparison.md), [Issue #1](https://github.com/ltorrecilla/macbook8.1/issues/1). | Reuse the existing monitor WAV for a level-managed, same-Raw-sink comparison; do not repeat finished recordings. |
+| Reusable audio installer | **Open:** sources and support files recovered; public installation is not validated. | [Packaging plan](docs/audio-packaging.md), [Issue #2](https://github.com/ltorrecilla/macbook8.1/issues/2). | Complete provenance/license review, offline source preparation, safe rollback, and clean-install/reboot/resume/update validation. The recovery wrapper is not a fresh installer. |
 | Keyboard and trackpad | **Working:** owner confirmed operation after the boot-parameter workaround. | Reported result recorded here; no validated reusable installer. | Document the exact procedure and verify persistence without treating per-kernel symbols as portable. |
 | Bluetooth | **Working:** owner confirmed pairing after the ACPI/DSDT workaround. | Reported result recorded here; no validated reusable installer. | Document a machine-appropriate procedure and verify reboot/resume behavior. |
 | Battery reporting | **Open:** reported charge state and percentage disagree. | No confirmed fix published. | Continue diagnosis of the contradictory battery readings. |
@@ -24,11 +25,29 @@ When a result changes, update this table and its linked guide or checkpoint with
 
 ## Continue the investigations
 
-**[Continuation checkpoint — updated 2026-10-19](docs/continuation-checkpoint.md)** records the working baseline, completed listening/recording tests, recovery lessons, remaining installer work, and the latest hibernation preparation status.
+**Start with the [latest audio recovery and EQ handoff](docs/audio-update-recovery.md), updated 2026-10-20 after the owner confirmed recovery.** It supplements the earlier [continuation checkpoint](docs/continuation-checkpoint.md), which preserves the acoustic/routing analyses and other hardware investigations.
 
-Audio next step: [full upstream MacBook8,1 EQ and source comparison](docs/audio-upstream-comparison.md). The full profile is **not yet tested or installed**. Channel duplication mainly increased recorded volume, not bass balance. Keep the working driver and `MacBook_Speaker_Raw` unchanged; the next comparison is planned as offline-rendered audio with controlled gain, not a driver replacement.
+Audio next step: [full upstream MacBook8,1 EQ and source comparison](docs/audio-upstream-comparison.md). The original live EQ was tried and Raw was preferred; what remains untested is the **controlled offline, level-managed full-profile comparison through the same Raw sink**. Channel duplication mainly increased recorded volume, not bass balance. Keep the working driver and `MacBook_Speaker_Raw` unchanged.
 
 Sound quality: [Issue #1](https://github.com/ltorrecilla/macbook8.1/issues/1). Reversible audio packaging: [Issue #2](https://github.com/ltorrecilla/macbook8.1/issues/2). The checkpoint preserves the completed work and next steps for these separate tasks.
+
+## Audio recovery after an update (existing installations only)
+
+After updating this checkout, check installed kernels without changing anything:
+
+```sh
+python3 scripts/repair-audio.py --check
+```
+
+If an update leaves a missing audio build, finish the update, connect to the internet, and run:
+
+```sh
+sudo python3 scripts/repair-audio.py --repair
+```
+
+The helper detects installed kernel images (including a new kernel before reboot), checks matching headers and the existing three-module source, selects the target compiler, checks exact source access, builds missing audio modules, verifies them, and regenerates Limine boot images. It does not change EQ/Raw routing, install prerequisites, reset firmware, reload hardware, or reboot. **Read the [recovery guide and limitations](docs/audio-update-recovery.md) first. The wrapper has simulated tests, not a physical hardware-validation result.**
+
+No automatic boot-time service is enabled. Kernel-source downloads and future driver/API changes can still fail; this is a repeatable recovery command, not a promise that every future kernel works.
 
 ## CPU frequency limit (tested on one MacBook8,1)
 
@@ -67,9 +86,9 @@ sudo python3 scripts/macbook81-hibernate-prepare.py --check
 
 The first published helper stopped during preflight because it used unsupported `swapon` options. That reader is now corrected, but the owner has **not yet reported a successful corrected preflight, preparation run, or hibernation/restore test**. Follow the guide for the guarded preparation and separate first test. Preparation does not initiate hibernation or change the normal suspend/lid action.
 
-## Audio (not installable yet)
+## Audio (fresh installation not available yet)
 
-The owner's MacBook8,1 has patched CS4208/HDA DKMS modules and a four-channel `MacBook_Speaker_Raw` PipeWire sink. Bass quality is still being investigated. The local driver source, configuration and previously missing support files have been recovered; a reproducible public installer has not been validated. See the [current checkpoint](docs/continuation-checkpoint.md) before repeating diagnostics. New contributors can use `bash scripts/collect-audio-evidence.sh` or `bash scripts/collect-audio-details.sh`, then inspect the produced report/archive for private data before sharing. See [Audio details](docs/audio.md).
+The owner's MacBook8,1 has patched CS4208/HDA DKMS modules and a four-channel `MacBook_Speaker_Raw` PipeWire sink. Bass quality is still being investigated. The local driver source, configuration and previously missing support files have been recovered; a reproducible public installer has not been validated. The recovery helper above is only for an already-registered installation. See the [latest audio findings](docs/audio-update-recovery.md) and [earlier checkpoint](docs/continuation-checkpoint.md) before repeating diagnostics. New contributors can use `bash scripts/collect-audio-evidence.sh` or `bash scripts/collect-audio-details.sh`, then inspect the produced report/archive for private data before sharing. See [Audio details](docs/audio.md).
 
 ## Other fixes
 
