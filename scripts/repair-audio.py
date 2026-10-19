@@ -24,8 +24,8 @@ from dataclasses import dataclass
 PACKAGE = "macbook12-audio"
 VERSION = "0.1"
 MODULES = ("snd-hda-codec-cs420x", "snd-hda-codec-generic", "snd-hda-intel")
-# Stable CachyOS kernels only; do not silently substitute a release for an RC.
-KERNEL_RE = re.compile(r"(?P<release>\d+\.\d+(?:\.\d+)?)-[A-Za-z0-9_.+\-]+")
+# Stable package releases only; never turn a release candidate into a final source URL.
+KERNEL_RE = re.compile(r"(?P<release>\d+\.\d+(?:\.\d+)?)-[0-9]+(?:\.[0-9]+)*-cachyos(?:-[A-Za-z0-9_.+\-]+)?")
 
 
 class Stop(RuntimeError):
@@ -66,7 +66,9 @@ class Recovery:
 
     def run(self, args: list[str], *, env=None, check=True) -> str:
         self.say("+ " + shlex.join(args))
-        result = subprocess.run(args, env=env, text=True, stdout=subprocess.PIPE,
+        process_env = dict(os.environ if env is None else env)
+        process_env["LC_ALL"] = "C"
+        result = subprocess.run(args, env=process_env, text=True, stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT, check=False)
         if self.log:
             self.log.write(result.stdout)
