@@ -1,6 +1,6 @@
 # Continuation checkpoint — MacBook8,1 CachyOS
 
-Saved 2026-10-18 at the owner's request to pause and continue later. This records the October 2026 conversation, uploaded evidence, and completed analyses; it is not a new hardware test or release.
+Saved 2026-10-18 at the owner's request to pause and continue later. Updated 2026-10-19 with hibernation compatibility and preparation progress. This records the October 2026 conversation, uploaded evidence, and completed analyses; it is not a new hardware test or release.
 
 ## Start here next time
 
@@ -31,7 +31,7 @@ These are observed/reported versions, not a claim that no later system update ha
 | Speaker codec route | Digital converter `0x0a` to enabled speaker pin `0x1d` |
 | Existing driver options | `single_cmd=1 power_save=0`; `softdep snd_hda_intel pre: snd_hda_codec_cs420x` |
 | CPU limiter | Published; owner confirmed initial operation. Reboot/resume/update persistence still needs explicit verification. |
-| Other hardware | Keyboard/trackpad and Bluetooth previously reported working on the original machine; reusable installers not validated. Battery reporting and printer resolution are not confirmed in this record. |
+| Other hardware | Keyboard/trackpad and Bluetooth previously reported working on the original machine; reusable installers not validated. Battery reporting remains unresolved in this record. |
 
 The separate analog `Master` control is associated with converter `0x02`. Left and right were equal at raw value 80/127 (-23.5 dB). Lowering to raw 60 and restoring 80 produced no clear speaker-volume change. Do not mistake raw 80 for 80%, or set Master to maximum to solve this issue.
 
@@ -120,7 +120,7 @@ The file `macbook81-macos-audio-reference.txt` was requested from the Big Sur la
 
 [Issue #2](https://github.com/ltorrecilla/macbook8.1/issues/2) tracks a reversible CachyOS installer. Source and all three previously missing support assets were recovered: `efi_recover.py`, `mb81-resume-recover.service`, and `mb81-jack-switch.service`. Do not request those files again as missing.
 
-The recovered legacy scripts are not a safe general installer. Remaining work includes license/provenance review, comparison of the locally modified headers, verified kernel source and symbol linkage for all three modules, CachyOS/mkinitcpio integration, preservation of DKMS original-module backups, opt-in low-level recovery, rollback, and clean installation/reboot/resume/kernel-update testing. Existing audit/staging unit tests are not substitutes for those hardware tests. No new code execution or tests were performed to save this documentation checkpoint.
+The recovered legacy scripts are not a safe general installer. Remaining work includes license/provenance review, comparison of the locally modified headers, verified kernel source and symbol linkage for all three modules, CachyOS/mkinitcpio integration, preservation of DKMS original-module backups, opt-in low-level recovery, rollback, and clean installation/reboot/resume/kernel-update testing. Existing audit/staging unit tests are not substitutes for those hardware tests. No new code execution or tests were performed for the original audio-only checkpoint.
 
 ## 8. Evidence inventory and privacy
 
@@ -156,3 +156,15 @@ After the manual installation of upstream `facetimehd` release `0.7.2` (its nati
 **Remaining camera task:** another, unnamed camera app reports no devices. Its exact name/version and installation method are unknown. Close `mpv`, fully reopen the app, then obtain `v4l2-ctl --list-devices`, `wpctl status`, and `fuser -v /dev/video0` if it still fails. These outputs have not yet been supplied. Do not mark PipeWire, browser, or Flatpak camera compatibility as solved, and do not change the working audio stack to guess at an app-discovery fix.
 
 See [the camera guide](camera.md) and the optional `scripts/install-camera.sh`, `scripts/check-camera.sh`, and `scripts/uninstall-camera.sh` helpers. They pin the working upstream driver/firmware combination and preserve unrelated installations. The wrappers are newly added and have not been run on the physical laptop; the existing manual installation needs only the diagnostic check. Reboot, suspend/resume, and rebuilding through a kernel update remain unverified. This camera addition does not change the audio continuation plan above.
+
+## 10. Suspend and hibernation — 2026-10-19
+
+The owner confirmed that ordinary `s2idle` suspend resumes normally, with battery drain during sleep. The running kernel is `7.2.9-2-cachyos`; `/sys/power/mem_sleep` reports `[s2idle] deep`, and hibernation is exposed in `/sys/power/state`. Only zram swap was active. No successful hibernation or restoration has been reported.
+
+The review of `juicecultus/macbook-sleep` led to an adapted preparation helper for this installation. The upstream installer has different bootloader and SPI-module assumptions. See [the hibernation guide](hibernation.md) and `scripts/macbook81-hibernate-prepare.py`. This helper guards the exact recorded kernel, machine ID, root filesystem UUID, and Limine boot layout; it is not validated for another installation or a later kernel.
+
+The planned preparation adds a 10 GiB swapfile in a separate Btrfs `@swap` subvolume, retains zram, and selects `HibernateMode=shutdown`. It checks the active initramfs for systemd's EFI resume support and preserves the existing boot images, boot parameters, and normal suspend/lid behavior. It stops before initiating hibernation. Automatic suspend-then-hibernate remains a later step after a successful manual restore test.
+
+The first helper **stopped during read-only preflight** because `swapon` rejected its unsupported `--json` option; the reader also used unsupported `--output`. The corrected helper uses the documented raw output format and has been delivered. **A successful corrected preflight, `--apply` run, and hardware hibernation/restore test are all still unconfirmed.** The next step is `sudo python3 scripts/macbook81-hibernate-prepare.py --check`, then the guide's preparation and separate test only if the checks pass. A passing simulated test is not evidence of physical restoration.
+
+Boot diagnostics identified approximately 83 MiB under the old machine-ID directory as unreferenced by the sole Limine configuration. Both current kernel entries use the current machine-ID directory. The helper can archive and verify the old directory before removing it; neither that cleanup nor resolution of the boot-usage warning has been confirmed. Preserve the current boot images and backups. This addition does not change the audio continuation plan above.

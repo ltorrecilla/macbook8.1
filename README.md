@@ -4,7 +4,7 @@ Experimental hardware support for the 12-inch MacBook (Early 2015). This project
 
 ## Fix tracker
 
-**Latest recorded results: 2026-10-18.** **Working** means the owner confirmed that behavior on the original MacBook8,1. **Open** means a resolution is not yet confirmed. Installer availability and reboot, suspend/resume, kernel-update, and other-machine validation are tracked separately.
+**Latest recorded results: 2026-10-19.** **Working** means the owner confirmed that behavior on the original MacBook8,1. **Open** means a resolution is not yet confirmed. Installer availability and reboot, suspend/resume, kernel-update, and other-machine validation are tracked separately.
 
 | Fix / area | Current result on the owner's MacBook | Repository support | Next action |
 |---|---|---|---|
@@ -17,15 +17,14 @@ Experimental hardware support for the 12-inch MacBook (Early 2015). This project
 | Keyboard and trackpad | **Working:** owner confirmed operation after the boot-parameter workaround. | Reported result recorded here; no validated reusable installer. | Document the exact procedure and verify persistence without treating per-kernel symbols as portable. |
 | Bluetooth | **Working:** owner confirmed pairing after the ACPI/DSDT workaround. | Reported result recorded here; no validated reusable installer. | Document a machine-appropriate procedure and verify reboot/resume behavior. |
 | Battery reporting | **Open:** reported charge state and percentage disagree. | No confirmed fix published. | Continue diagnosis of the contradictory battery readings. |
-| Brother DCP-9020CDW printing | **Open:** last CUPS output showed no configured print destinations. | No confirmed fix published. | Complete printer-queue setup and confirm a physical test page. |
-| Custom keyboard shortcuts | **Open:** input-remapper still required manual launch/application each session. | No confirmed persistent solution published. | Establish and verify mappings that apply automatically at login. |
-| Limine boot-usage warning | **Open:** boot-usage limit warning reported with no snapshot entries. | No confirmed fix published. | Inspect boot filesystem usage and snapshot configuration, then confirm a targeted correction. |
+| Suspend and hibernation | **Experimental:** ordinary `s2idle` suspend resumes normally, with battery drain. Hibernation remains untested. | [Guarded preparation helper and guide](docs/hibernation.md) for the owner's recorded installation. | Rerun the corrected read-only preflight; successful preparation and the first hibernation/restore test have not been reported. |
+| Limine boot-usage warning | **Open:** an unused boot directory of approximately 83 MiB was identified; cleanup is not confirmed. | [Hibernation preparation helper](docs/hibernation.md) can archive, verify, and remove that exact directory. | Confirm cleanup and resulting free space, then check whether the warning is resolved. |
 
 When a result changes, update this table and its linked guide or checkpoint with the date, kernel, what was actually tested, and the next action. Mark persistence or another-machine compatibility verified only after recording that test. A published helper or passing simulated test does not by itself close a hardware issue.
 
 ## Continue the investigations
 
-**[Continuation checkpoint — 2026-10-18](docs/continuation-checkpoint.md)** records the working baseline, completed listening/recording tests, recovery lessons, remaining installer work, and the exact next experiment.
+**[Continuation checkpoint — updated 2026-10-19](docs/continuation-checkpoint.md)** records the working baseline, completed listening/recording tests, recovery lessons, remaining installer work, and the latest hibernation preparation status.
 
 Audio next step: [full upstream MacBook8,1 EQ and source comparison](docs/audio-upstream-comparison.md). The full profile is **not yet tested or installed**. Channel duplication mainly increased recorded volume, not bass balance. Keep the working driver and `MacBook_Speaker_Raw` unchanged; the next comparison is planned as offline-rendered audio with controlled gain, not a driver replacement.
 
@@ -56,13 +55,25 @@ bash scripts/check-camera.sh
 
 For a new installation, follow [the camera guide](docs/camera.md) to install prerequisites and matching kernel headers, then run `bash scripts/install-camera.sh` as your ordinary user. The optional installer pins upstream revisions, uses DKMS, and checks driver ownership and firmware hashes. The hardware result came from the preceding manual procedure; these new wrappers still need a physical installation test. Reboot, suspend/resume, kernel updates, and browser/Flatpak use have not been verified. The guide also explains the unresolved app discovery checks and removal of a wrapper-owned installation.
 
+## Hibernation (experimental; specific to the owner's installation)
+
+Ordinary `s2idle` suspend resumes normally on the owner's MacBook8,1, but the battery drains during sleep. The optional [hibernation guide](docs/hibernation.md) documents preparation for longer breaks, including a 10 GiB Btrfs swapfile and systemd's EFI resume mechanism. The helper checks the recorded kernel, machine ID, filesystem UUID, and Limine boot layout; it is not a general MacBook installer.
+
+Start with the read-only check:
+
+```sh
+sudo python3 scripts/macbook81-hibernate-prepare.py --check
+```
+
+The first published helper stopped during preflight because it used unsupported `swapon` options. That reader is now corrected, but the owner has **not yet reported a successful corrected preflight, preparation run, or hibernation/restore test**. Follow the guide for the guarded preparation and separate first test. Preparation does not initiate hibernation or change the normal suspend/lid action.
+
 ## Audio (not installable yet)
 
 The owner's MacBook8,1 has patched CS4208/HDA DKMS modules and a four-channel `MacBook_Speaker_Raw` PipeWire sink. Bass quality is still being investigated. The local driver source, configuration and previously missing support files have been recovered; a reproducible public installer has not been validated. See the [current checkpoint](docs/continuation-checkpoint.md) before repeating diagnostics. New contributors can use `bash scripts/collect-audio-evidence.sh` or `bash scripts/collect-audio-details.sh`, then inspect the produced report/archive for private data before sharing. See [Audio details](docs/audio.md).
 
 ## Other fixes
 
-Keyboard/trackpad and Bluetooth work on the original laptop, but universal installers have **not** been validated. The tracker above also records the unresolved battery, printing, shortcut, and boot-warning tasks. Do not copy per-kernel `initcall_blacklist` arguments or ACPI DSDT binary files to other machines without validation.
+Keyboard/trackpad and Bluetooth work on the original laptop, but universal installers have **not** been validated. The tracker above also records the unresolved battery, hibernation, and boot-warning tasks. Do not copy per-kernel `initcall_blacklist` arguments or ACPI DSDT binary files to other machines without validation.
 
 Original scripts and documentation are MIT-licensed. Linux kernel-derived future code must preserve upstream licenses and credits.
 
