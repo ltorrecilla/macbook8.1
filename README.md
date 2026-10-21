@@ -4,7 +4,7 @@ Experimental hardware support for the 12-inch MacBook (Early 2015). This project
 
 ## Fix tracker
 
-**Latest repository update: 2026-10-20.** **Working** means the owner confirmed that behavior on the original MacBook8,1. **Open** means a resolution is not yet confirmed. Installer availability and reboot, suspend/resume, kernel-update, and other-machine validation are tracked separately.
+**Latest repository update: 2026-10-21.** **Working** means the owner confirmed that behavior on the original MacBook8,1. **Open** means a resolution is not yet confirmed. Installer availability and reboot, suspend/resume, kernel-update, and other-machine validation are tracked separately.
 
 | Fix / area | Current result on the owner's MacBook | Repository support | Next action |
 |---|---|---|---|
@@ -13,7 +13,8 @@ Experimental hardware support for the 12-inch MacBook (Early 2015). This project
 | Camera discovery in other apps | **Open:** another, unnamed camera app reports no devices. | [Application discovery checks](docs/camera.md#application-discovery-still-open). | Record the app name/version and installation source; close `mpv`, retry, then inspect the recorded V4L2/PipeWire/device-user diagnostics. |
 | Audio playback | **Working again:** owner confirmed recovery targeting `7.2.11-1-cachyos`; Raw remains preferred. | [Latest recovery findings](docs/audio-update-recovery.md); existing three-module driver. | Keep the recovered configuration unchanged while resuming EQ work. |
 | Audio after kernel updates | **Manual recovery confirmed; unattended reliability open.** Missing per-kernel builds, compiler mismatch, and source-download failure were separate problems. | [Recovery/check helper](scripts/repair-audio.py) and [guide](docs/audio-update-recovery.md); 28 simulated tests. | Run the read-only check now. The new wrapper still needs a real MacBook recovery/update-cycle test. |
-| Audio sound quality | **Open:** tonal balance still differs from macOS; live EQ previously sounded worse than Raw. | [Latest EQ handoff](docs/audio-update-recovery.md#eq-resume-without-repeating-completed-tests), [full-profile plan](docs/audio-upstream-comparison.md), [Issue #1](https://github.com/ltorrecilla/macbook8.1/issues/1). | Reuse the existing monitor WAV for a level-managed, same-Raw-sink comparison; do not repeat finished recordings. |
+| Audio sound quality | **Working prototype / still open:** owner prefers D+ Clarity v4 to Raw and D v3; Big Sur remains slightly clearer/louder. | [D+ v4 service and listening results](docs/dplus-service.md), [Issue #1](https://github.com/ltorrecilla/macbook8.1/issues/1). | Preserve approved v4 and separately verify loudness, not more blind EQ boosts. |
+| D+ login service | **Manual start and playback owner-confirmed; login autostart untested.** | [Opt-in enable/disable/rollback guide](docs/dplus-service.md). | Test a full logout/login with Raw remaining default; validate crash and suspend/resume cleanup. |
 | Reusable audio installer | **Open:** sources and support files recovered; public installation is not validated. | [Packaging plan](docs/audio-packaging.md), [Issue #2](https://github.com/ltorrecilla/macbook8.1/issues/2). | Complete provenance/license review, offline source preparation, safe rollback, and clean-install/reboot/resume/update validation. The recovery wrapper is not a fresh installer. |
 | Keyboard and trackpad | **Working:** owner confirmed operation after the boot-parameter workaround. | Reported result recorded here; no validated reusable installer. | Document the exact procedure and verify persistence without treating per-kernel symbols as portable. |
 | Bluetooth | **Working:** owner confirmed pairing after the ACPI/DSDT workaround. | Reported result recorded here; no validated reusable installer. | Document a machine-appropriate procedure and verify reboot/resume behavior. |
@@ -30,6 +31,10 @@ When a result changes, update this table and its linked guide or checkpoint with
 Audio next step: [full upstream MacBook8,1 EQ and source comparison](docs/audio-upstream-comparison.md). The original live EQ was tried and Raw was preferred; what remains untested is the **controlled offline, level-managed full-profile comparison through the same Raw sink**. Channel duplication mainly increased recorded volume, not bass balance. Keep the working driver and `MacBook_Speaker_Raw` unchanged.
 
 Sound quality: [Issue #1](https://github.com/ltorrecilla/macbook8.1/issues/1). Reversible audio packaging: [Issue #2](https://github.com/ltorrecilla/macbook8.1/issues/2). The checkpoint preserves the completed work and next steps for these separate tasks.
+
+## D+ Clarity v4 speaker processing (optional)
+
+The owner confirmed the manually started D+ v4 per-user service sounds much closer to macOS than Raw. Its engine is **not yet a complete reproducible GitHub release**. If you already installed and manually tested the prototype, enable login autostart using `systemctl --user enable macbook81-dplus.service`; the service does not become the system default and Raw remains the fallback. **Do not enable until the manual test works.** See [D+ v4 setup, checks, limitations and rollback](docs/dplus-service.md). No boot-time service or mandatory audio-package change is added.
 
 ## Audio recovery after an update (existing installations only)
 
