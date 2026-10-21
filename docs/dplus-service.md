@@ -2,6 +2,8 @@
 
 Updated 2026-10-21. **Owner-confirmed:** the prototype's manual `python3 manage.py install`, `check`, `start` and application routing worked and sounded good. **Not yet confirmed:** enable-at-login, logout/login, suspend/resume, PipeWire restart, volume-key behavior, automatic restart cleanup, or installation on another machine.
 
+> **BLOCKER — 2026-10-21:** Owner reports multi-second audio delay after pausing/resuming video through the D+ FFmpeg/parecord/pacat service. Manual sound quality approval does **not** establish A/V-sync or production readiness. **Do not enable at login or make D+ the default** until this is diagnosed and fixed. If enabled, run `systemctl --user disable --now macbook81-dplus.service` and restore `pactl set-default-sink MacBook_Speaker_Raw`. Do not adjust EQ or kernel driver to fix transport latency. Investigate queue/backpressure, stream cork/uncork behavior, and timestamps; retest pause/resume repeatedly with measured audio/video offset.
+
 ## Architecture and provenance
 
 MacBook8,1 uses the existing, separately maintained three-module `macbook12-audio/0.1` HDA/CS4208 DKMS driver and `MacBook_Speaker_Raw` four-channel PCM. D+ is *userspace audio processing*, not a new hardware driver. It creates a temporary stereo sink `MacBook_Speaker_D_Live`, captures that sink's monitor, processes with FFmpeg, and plays `L,R,0,0` into Raw. It does not replace, reinstall or modify the patched kernel modules.
@@ -12,7 +14,7 @@ D v4 preserves D's **11 biquad stages**, approximately **+8.31 dB pre-limiter ga
 
 The user's approved engine was supplied separately in the working `macbook81-dplus-service-prototype.zip`, copied into `~/.local/share/macbook81-dplus/dplus-engine.py` by that prototype's installer. **That engine is not yet committed to this repository as a public ready-to-run release**: reproducible packaging and redistribution/validation remain to be completed. The repository documents the confirmed behavior and keeps the runtime code separate from the driver.
 
-## Make the *already working manual prototype* start at login
+## Login autostart — SUSPENDED pending A/V synchronization fix
 
 First stop the currently running manual test or leave it to be managed by the same systemd unit. Ensure Raw is the current system default:
 
@@ -22,6 +24,8 @@ systemctl --user --no-pager status macbook81-dplus.service
 ```
 
 Expected default: `MacBook_Speaker_Raw`. Confirm the unit is the previously manually tested `macbook81-dplus.service`. Do **not** start a second v4 test alongside it.
+
+**The following enable command is retained only as documentation of a future workflow. Do not execute it while the A/V-sync defect is open.**
 
 To enable the existing, manually tested user service for future **logins**:
 
@@ -81,6 +85,7 @@ D+ requires the kernel driver and Raw sink to work. Run the repository's read-on
 ## Release gates
 
 - [x] Owner confirmed manual startup, playback, and acceptable sound quality on one MacBook8,1.
+- [ ] **BLOCKER: correct multi-second audio delay on pause/resume, verify with repeated video tests.**
 - [ ] Verify actual login autostart and clean logout.
 - [ ] Validate service stop/cleanup, crash/restart, headphone handling and PipeWire restarts.
 - [ ] Test suspend/resume and at least one kernel-update cycle.
