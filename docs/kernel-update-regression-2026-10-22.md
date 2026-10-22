@@ -12,7 +12,7 @@ Recorded 2026-10-22 from the owner's MacBook8,1. This is a case report, **not** 
 - Camera still works on 7.3.0-2.
 - Audio recovery `--check` showed the LTS kernel `6.18.55-2-cachyos-lts` had all three patched DKMS modules, but 7.3.0-2 needed a build. The running kernel resolved `snd-hda-codec-cs420x` to the stock module under `kernel/sound/hda/codecs/cirrus/` rather than `updates/dkms/`. `MacBook_Speaker_Raw` was missing; only `input.MacBook_Speaker` and built-in ALSA output were visible.
 - `scripts/repair-audio.py --repair` initially stopped on kernel.org HTTP 404 for `linux-7.3.0.tar.xz`. The registered `install.cirrus.driver.sh` already tries both full and shortened versions. The recovery wrapper's preflight needed the same `.0` normalization. That fix is now in the repository.
-- After locally applying the URL fix, the owner reported the lengthy DKMS invocation **finished**; its final output, subsequent on-disk check, new boot status and restored live audio are **not yet verified**. Do not mark audio working.
+- After applying the URL fix, both installed kernels passed the audio on-disk verification; ALSA exposed CS4208 Speaker device 2, PipeWire showed MacBook_Speaker_Raw as configured default, and the owner confirmed the speakers sound good. The exact D+ service startup state and resilience across a further kernel update remain unverified.
 
 ## Before every future kernel reboot
 
@@ -20,7 +20,7 @@ Recorded 2026-10-22 from the owner's MacBook8,1. This is a case report, **not** 
 2. Run `python3 scripts/check-kernel-update.py`. It is read-only; an SPI **UNVERIFIED** or **NOT READY** result requires review, not an automated rewrite.
 3. Run `python3 scripts/repair-audio.py --check`; if modules are missing, review `docs/audio-update-recovery.md` and run its guarded `sudo ... --repair` process while still booted into the working kernel. Do not run two DKMS builds in parallel.
 4. Confirm `/etc/default/limine` contains the verified symbol(s) for the **target** kernel and that the intended Limine entry uses the generated parameters. Do not blindly copy a symbol from the running kernel onto a different kernel.
-5. Only then reboot into the target kernel, with an external keyboard available, and verify `lspci -nnk -s 00:15.0`, Apple SPI behavior, `modinfo -n snd-hda-codec-cs420x`, `aplay -l`, the Raw sink and actual speaker playback. The on-disk checks cannot establish live speaker behavior.
+5. Only then reboot into the target kernel, with an external keyboard available, and verify `lspci -nnk -s 00:15.0`, Apple SPI behavior, `modinfo -n snd-hda-codec-cs420x`, `aplay -l`, the Raw sink and actual speaker playback. The on-disk checks cannot establish live speaker behavior; owner confirmed playback on 7.3.0-2 after recovery.
 
 If a new kernel fails the SPI compatibility check and its symbol is not available from reliable symbol data, **stay on a known-working kernel**. There is no safe universally portable blacklist string for this built-in driver. Longer-term work should test a stable hardware-specific kernel patch/quirk (and upstream support) rather than generating fragile boot parameters automatically.
 
