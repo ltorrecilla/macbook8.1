@@ -1,8 +1,14 @@
 # D+ Clarity v4 — optional per-user speaker processing
 
-Updated 2026-10-21. **Owner-confirmed:** the prototype's manual `python3 manage.py install`, `check`, `start` and application routing worked and sounded good. **Not yet confirmed:** enable-at-login, logout/login, suspend/resume, PipeWire restart, volume-key behavior, automatic restart cleanup, or installation on another machine.
+Updated 2026-10-23, recording the post-7.3.0 recovery service-state check. **Owner-confirmed:** the prototype's manual `python3 manage.py install`, `check`, `start` and application routing worked and sounded good. **Not yet confirmed:** enable-at-login, logout/login, suspend/resume, PipeWire restart, volume-key behavior, automatic restart cleanup, or installation on another machine.
 
 > **BLOCKER — 2026-10-21:** Owner reports multi-second audio delay after pausing/resuming video through the D+ FFmpeg/parecord/pacat service. Manual sound quality approval does **not** establish A/V-sync or production readiness. **Do not enable at login or make D+ the default** until this is diagnosed and fixed. If enabled, run `systemctl --user disable --now macbook81-dplus.service` and restore `pactl set-default-sink MacBook_Speaker_Raw`. Do not adjust EQ or kernel driver to fix transport latency. Investigate queue/backpressure, stream cork/uncork behavior, and timestamps; retest pause/resume repeatedly with measured audio/video offset.
+
+## Observation after the 7.3.0 kernel recovery
+
+The owner confirmed that patched speaker playback and Raw routing work again. A subsequent `systemctl --user is-enabled macbook81-dplus.service` and `is-active` check returned `disabled` and `inactive`. Therefore **the good sound reported at that point does not prove the D+ user service was processing audio**. Starting, enabling, and successful login of that service have not been confirmed in a new diagnostic output. The existing pause/resume A/V-sync blocker remains in effect; do not silently enable D+ as part of a kernel recovery.
+
+Check service state without changing it with `systemctl --user is-enabled macbook81-dplus.service; systemctl --user is-active macbook81-dplus.service`. Disabled/inactive is an expected possible outcome for this optional prototype and is not a kernel-update failure. Audio driver and Raw sink checks are independent.
 
 ## Architecture and provenance
 
