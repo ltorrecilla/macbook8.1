@@ -43,7 +43,7 @@ class Kernel:
         match = KERNEL_RE.fullmatch(self.version)
         if not match:
             raise Stop(f"Unsupported kernel release: {self.version}")
-        release = match.group("release")
+        release = re.sub(r"\.0$", "", match.group("release"))
         major = release.split(".")[0]
         return f"https://cdn.kernel.org/pub/linux/kernel/v{major}.x/linux-{release}.tar.xz"
 
