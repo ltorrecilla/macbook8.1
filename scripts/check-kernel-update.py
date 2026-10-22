@@ -78,7 +78,7 @@ def main():
             print("  SPI CONFIGURED: matching symbol found; functional boot test still required")
     # Optional experimental D+ service is a separate user-session concern.
     # A disabled unit is not a kernel compatibility failure.
-    print("\\nD+ service (optional, user session):")
+    print("\nD+ service (optional, user session):")
     if "SUDO_UID" in __import__("os").environ:
         print("  UNCHECKED: run as the desktop user without sudo")
     else:
