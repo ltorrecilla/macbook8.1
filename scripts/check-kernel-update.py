@@ -76,6 +76,17 @@ def main():
             print("  SPI NOT ACTIVE: persistent config has symbol but running cmdline does not")
         else:
             print("  SPI CONFIGURED: matching symbol found; functional boot test still required")
+    # Optional experimental D+ service is a separate user-session concern.
+    # A disabled unit is not a kernel compatibility failure.
+    print("\\nD+ service (optional, user session):")
+    if "SUDO_UID" in __import__("os").environ:
+        print("  UNCHECKED: run as the desktop user without sudo")
+    else:
+        enabled = command("systemctl", "--user", "is-enabled", "macbook81-dplus.service").strip()
+        active = command("systemctl", "--user", "is-active", "macbook81-dplus.service").strip()
+        print("  Enabled:", enabled or "unknown")
+        print("  Active:", active or "unknown")
+        print("  NOTE: good Raw playback does not prove D+ processing; prior A/V-sync delay remains open")
     print("\nResult:", "REVIEW REQUIRED; do not reboot into unchecked new kernel" if warnings else
           "No detected blockers; this does not prove hardware will work after reboot")
     return 2 if warnings else 0
