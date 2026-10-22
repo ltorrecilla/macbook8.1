@@ -4,7 +4,7 @@ Experimental hardware support for the 12-inch MacBook (Early 2015). This project
 
 ## Fix tracker
 
-**Latest repository update: 2026-10-22.** **Working** means the owner confirmed that behavior on the original MacBook8,1. **Open** means a resolution is not yet confirmed. Installer availability and reboot, suspend/resume, kernel-update, and other-machine validation are tracked separately.
+**Latest repository update: 2026-10-23.** **Working** means the owner confirmed that behavior on the original MacBook8,1. **Open** means a resolution is not yet confirmed. Installer availability and reboot, suspend/resume, kernel-update, and other-machine validation are tracked separately.
 
 | Fix / area | Current result on the owner's MacBook | Repository support | Next action |
 |---|---|---|---|
@@ -17,6 +17,7 @@ Experimental hardware support for the 12-inch MacBook (Early 2015). This project
 | D+ login service | **After 7.3.0 recovery, observed disabled/inactive; user confirmed good speaker sound, but did not provide a new D+ active/enabled check. Login autostart unverified; prior A/V-sync blocker remains.** | [Opt-in enable/disable/rollback guide](docs/dplus-service.md). | Test a full logout/login with Raw remaining default; validate crash and suspend/resume cleanup. |
 | Reusable audio installer | **Open:** sources and support files recovered; public installation is not validated. | [Packaging plan](docs/audio-packaging.md), [Issue #2](https://github.com/ltorrecilla/macbook8.1/issues/2). | Complete provenance/license review, offline source preparation, safe rollback, and clean-install/reboot/resume/update validation. The recovery wrapper is not a fresh installer. |
 | Keyboard and trackpad | **Working again on 7.3.0-2:** prior built-in dw_dmac_pci blacklist symbol changed from __437_139 to __442_139; after updating Limine blacklist, owner confirmed both recovered. | Reported result recorded here; no validated reusable installer. | Document the exact procedure and verify persistence without treating per-kernel symbols as portable. |
+| Upstream SPI PIO patch | **Candidate, not tested:** v17 submitted 2026-09-30; proposed DMI-scoped SPI PIO and runtime PM quirk. Merge status unconfirmed. | [Upstream patch evaluation and safe test plan](docs/spi-upstream-pio-patch.md). | Keep working blacklist; review current upstream status and test only in a separate kernel build. |
 | Bluetooth | **Working:** owner confirmed pairing after the ACPI/DSDT workaround. | Reported result recorded here; no validated reusable installer. | Document a machine-appropriate procedure and verify reboot/resume behavior. |
 | Battery reporting | **Open:** reported charge state and percentage disagree. | No confirmed fix published. | Continue diagnosis of the contradictory battery readings. |
 | Suspend and hibernation | **Experimental:** ordinary `s2idle` suspend resumes normally, with battery drain. Hibernation remains untested. | [Guarded preparation helper and guide](docs/hibernation.md) for the owner's recorded installation. | Rerun the corrected read-only preflight; successful preparation and the first hibernation/restore test have not been reported. |
