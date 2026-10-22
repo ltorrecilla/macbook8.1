@@ -24,6 +24,10 @@ Recorded 2026-10-22 from the owner's MacBook8,1. This is a case report, **not** 
 
 If a new kernel fails the SPI compatibility check and its symbol is not available from reliable symbol data, **stay on a known-working kernel**. There is no safe universally portable blacklist string for this built-in driver. Longer-term work should test a stable hardware-specific kernel patch/quirk (and upstream support) rather than generating fragile boot parameters automatically.
 
+## Candidate upstream replacement
+
+A proposed MacBook8,1-specific SPI PIO quirk (v17, September 30, 2026) could replace our unstable built-in DMA initcall blacklist if accepted and validated. **Not tested on the owner's machine and not confirmed merged.** See [upstream patch evaluation and isolated test plan](spi-upstream-pio-patch.md). Do not remove the working workaround or modify the normal kernel in place.
+
 ## Scope and constraints
 
 The checker does not change `/etc/default/limine`, install drivers, choose a kernel or run at package transaction time. The audio recovery wrapper does not restore PipeWire routes, speaker firmware state or user services. A future improvement is an **opt-in** post-upgrade Pacman notification and an offline verified kernel-source cache; neither should silently reboot or rewrite a working boot setup. Treat package hooks as diagnostics only until physical update-cycle tests pass.
