@@ -18,6 +18,8 @@ Return to [README and status tracker](../README.md).
 
 Bluetooth workaround is tracked in the [README status table](../README.md); there is not yet a validated reusable Bluetooth installer/standalone guide. Battery *reporting* inconsistencies are separate from actual energy drain and remain open.
 
+For a compact decision guide, see the [audio guide map](audio-guide-map.md).
+
 ## Audio: choose the right document
 
 - [Audio overview](audio.md): scope and known limitations
