@@ -14,3 +14,7 @@ The current installer updates helper, service and config in sequence, then enabl
 - [ ] Verify known-good MacBook CPU cap behavior and upgrade/reinstall using backup and a deliberate hardware test.
 
 Until this is completed, **do not run the changed installer solely to verify cleanup**. See [installer rollback audit](phase4-installer-rollback-audit.md).
+
+## Transactional design follow-up
+
+See [the CPU transactional rollback design](phase4-cpu-transaction-design.md) for the required fresh-install versus existing-upgrade behavior and the next regression test plan. This remains a proposal, not a validated change to the working installation.
