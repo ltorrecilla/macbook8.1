@@ -27,6 +27,8 @@ max_khz=$((10#$max_mhz * 1000))
 source_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 helper_src="$source_dir/scripts/cpu-cap-control.sh"
 service_src="$source_dir/systemd/macbook81-cpu-cap.service"
+# shellcheck source=cpu-config-ownership.sh
+source "$source_dir/scripts/cpu-config-ownership.sh"
 [[ -r "$helper_src" && -r "$service_src" ]] || fail 'Missing kit files'
 shopt -s nullglob
 policies=(/sys/devices/system/cpu/cpufreq/policy[0-9]*)
@@ -40,12 +42,20 @@ done
 unit=/etc/systemd/system/macbook81-cpu-cap.service
 helper=/usr/local/libexec/macbook81-cpu-cap
 config=/etc/macbook81-cpu-cap.max-khz
+marker=/etc/macbook81-cpu-cap.max-khz.owner
 if [[ -e "$unit" ]] && ! grep -q '^# Managed by macbook81-starter' "$unit"; then
   fail "A different $unit exists; refusing to overwrite it"
 fi
 if [[ -e "$helper" ]] && ! grep -q '^# macbook81-cpu-cap runtime helper\.' "$helper"; then
   fail "A different $helper exists; refusing to overwrite it"
 fi
+legacy_owned=no
+if [[ -f "$unit" && -f "$helper" ]] &&
+   grep -q '^# Managed by macbook81-starter' "$unit" &&
+   grep -q '^# macbook81-cpu-cap runtime helper\.' "$helper"; then
+  legacy_owned=yes
+fi
+cpu_cap_config_preflight "$config" "$marker" "$max_khz" "$legacy_owned" || fail 'Refusing to alter CPU config'
 for other in cpupower.service tuned.service auto-cpufreq.service; do
   if systemctl is-active --quiet "$other" 2>/dev/null; then
     printf 'WARNING: %s is active and may override frequency limits.\n' "$other" >&2
