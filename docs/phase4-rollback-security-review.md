@@ -1,3 +1,5 @@
+> **Cleanup status (2026-10-23):** The unintegrated prototype shell script and its dedicated fixture tests were removed from the active tree because the path/race safety review blocked production use. Their full source remains in Git history (PR #30). No production CPU installer depends on them.
+
 # Phase 4 — Fresh rollback prototype security review
 
 **Status: BLOCKED for production integration.** PR #30 merged and CI passed, but tests only exercise the existing fixture scenarios. A green CI result does not establish safe deletion of real filesystem objects.
