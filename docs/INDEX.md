@@ -44,6 +44,8 @@ The [Phase 3 dependency map](phase3-dependency-map.md) records which script, sys
 
 **Release preparation:** [Phase 4 safety gates and hardware acceptance checklist](phase4-release-safety.md) documents what must be verified before installers or releases can be considered stable.
 
+Phase 4's [installer ownership and rollback audit](phase4-installer-rollback-audit.md) records the identified CPU configuration protection gap and remaining camera/audio failure-path tests.
+
 ## Maintenance and contributor references
 
 - [Repository cleanup roadmap](repository-cleanup-roadmap.md) and [Phase 1 disposition](phase1-disposition-2026-10-23.md)
