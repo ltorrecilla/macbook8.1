@@ -52,4 +52,4 @@ These commands should not install or change system configuration, but checks can
 4. Verify script ownership and do not run experimental hibernation, D+ or audio routing tools as part of routine installation.
 5. For collectors, keep generated files private until screened for identifiers and code/firmware licensing.
 
-See [script migration roadmap](phase3-script-organization.md). **Do not move scripts or change old paths solely for aesthetics.**
+See [maintenance rules](repository-cleanup-roadmap.md). **Keep executable entry-point paths stable unless a tested change requires otherwise.**
