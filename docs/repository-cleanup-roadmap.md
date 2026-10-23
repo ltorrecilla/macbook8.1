@@ -15,7 +15,7 @@ This is a **hardware-specific research toolkit**, not a general installer. The [
 
 1. **Hardware:** measure `s2idle` battery drain before/after an optional EC-wakeup experiment; confirm battery readings from `macsmc-battery`, not the former `BAT0` path.
 2. **Kernel updates:** verify DMA compatibility and patched HDA audio after each upgrade and keep a known-good boot entry.
-3. **Audio and camera:** complete D+ latency investigation, fresh audio licensing/packaging, camera application discovery and wrapper validation.
+3. **Audio and camera:** deliver a listenable, reversible D+ DSP prototype next (do not keep extending the private PipeWire port smoke harness); then validate A/V sync/default routing per [D+ roadmap](dplus-service.md). Separately complete fresh audio driver packaging and camera application discovery.
 4. **Power/CPU:** confirm cap persistence and real installer rollback, then test hibernation/restore only under controlled conditions.
 5. **Release:** review provenance and private data, verify rollback on real hardware, maintain tested-kernel matrix, and report upstream findings where reproducible.
 
