@@ -34,6 +34,8 @@ For a compact decision guide, see the [audio guide map](audio-guide-map.md).
 - [Recovered missing installer support files](audio-support-recovery.md): historical recovery notes; not the standard repair procedure
 - [Speaker routing diagnosis](speaker-sound-diagnosis.md) and [continuation checkpoint](continuation-checkpoint.md): experimental/historical evidence; **retained**, not obsolete
 
+The [historical-document archive plan](history-archive-plan.md) identifies dated investigations to preserve and the link checks required before moving them.
+
 ## Maintenance and contributor references
 
 - [Repository cleanup roadmap](repository-cleanup-roadmap.md) and [Phase 1 disposition](phase1-disposition-2026-10-23.md)
