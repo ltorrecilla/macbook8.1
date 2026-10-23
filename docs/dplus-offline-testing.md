@@ -45,6 +45,23 @@ Run portable unit tests:
 python3 -m unittest discover -s tests -p 'test_dplus_biquad_parity.py' -v
 ```
 
+## Next gate: PipeWire graph sample rate (read-only)
+
+The owner confirmed the offline 11-biquad math on CachyOS. **Do not interpret that as native PipeWire filter equivalence.** PipeWire's documented `bq_raw` picks the available coefficient set nearest to the **graph sampling rate**. The inert generated graph has only 44.1-kHz coefficients; if the actual processing graph runs at 48 kHz, applying the same values will shift the response. `pactl list short sinks` does not prove the graph clock rate.
+
+Inspect without changing anything:
+
+```bash
+printf '=== SETTINGS METADATA ===\n'
+pw-metadata -n settings 0
+printf '=== AUDIO DEFAULT AND PROTOTYPE ===\n'
+pactl get-default-sink
+systemctl --user is-enabled macbook81-dplus.service
+systemctl --user is-active macbook81-dplus.service
+```
+
+The next *implementation* must either ensure the actual biquad processing graph is fixed at 44.1 kHz with verified resampling boundaries, or generate the correctly transformed coefficients for the verified rate. Neither approach is assumed solved. Do not set `clock.force-rate`, change the global PipeWire clock, load the graph, or enable the old D+ service as part of this check.
+
 ## What is actually tested
 
 - Silence, left impulse, right impulse, quiet synthetic audio, loud synthetic audio.
