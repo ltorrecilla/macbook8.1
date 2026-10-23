@@ -123,6 +123,31 @@ class IsolatedPipeWireSmokeTests(unittest.TestCase):
         source = SCRIPT.read_text(encoding="utf-8")
         self.assertIn("Relevant private log messages:", source)
 
+    def test_private_filter_port_inventory_is_filtered_by_node(self):
+        objects = [
+            {"id": 21, "type": "PipeWire:Interface:Node",
+             "info": {"props": {"node.name": mod.CAPTURE}}},
+            {"id": 22, "type": "PipeWire:Interface:Node",
+             "info": {"props": {"node.name": mod.PLAYBACK}}},
+            {"id": 31, "type": "PipeWire:Interface:Port",
+             "info": {"direction": "input",
+                      "props": {"node.id": 21, "port.name": "input_FL", "audio.channel": "FL"}}},
+            {"id": 32, "type": "PipeWire:Interface:Port",
+             "info": {"direction": "output",
+                      "props": {"node.id": 22, "port.name": "output_FR", "audio.channel": "FR"}}},
+            {"id": 33, "type": "PipeWire:Interface:Port",
+             "info": {"props": {"node.id": 999, "port.name": "unknown"}}},
+        ]
+        ports = mod.private_filter_ports(objects)
+        self.assertEqual(len(ports), 2)
+        self.assertEqual({p["node"] for p in ports}, {mod.CAPTURE, mod.PLAYBACK})
+        self.assertEqual({p["channel"] for p in ports}, {"FL", "FR"})
+
+    def test_private_port_inventory_handles_missing_properties(self):
+        entries = [{"type": "PipeWire:Interface:Node", "info": None},
+                   {"type": "PipeWire:Interface:Port", "info": None}]
+        self.assertEqual(mod.private_filter_ports(entries), [])
+
     def test_no_service_or_pulse_actions(self):
         s = SCRIPT.read_text(encoding="utf-8")
         self.assertNotIn("systemctl", s)
