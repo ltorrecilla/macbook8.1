@@ -1,102 +1,128 @@
-# D+ Clarity v4 — optional per-user speaker processing
+# D+ Clarity v4 — status, evidence, and delivery roadmap
 
-Updated 2026-10-23, recording the post-7.3.0 recovery service-state check. **Owner-confirmed:** the prototype's manual `python3 manage.py install`, `check`, `start` and application routing worked and sounded good. **Not yet confirmed:** enable-at-login, logout/login, suspend/resume, PipeWire restart, volume-key behavior, automatic restart cleanup, or installation on another machine.
+**Updated 2026-10-23 · MacBook8,1 (Early 2015) / CachyOS · [Tracking issue #39](https://github.com/ltorrecilla/macbook8.1/issues/39)**
 
-> **BLOCKER — 2026-10-21:** Owner reports multi-second audio delay after pausing/resuming video through the D+ FFmpeg/parecord/pacat service. Manual sound quality approval does **not** establish A/V-sync or production readiness. **Do not enable at login or make D+ the default** until this is diagnosed and fixed. If enabled, run `systemctl --user disable --now macbook81-dplus.service` and restore `pactl set-default-sink MacBook_Speaker_Raw`. Do not adjust EQ or kernel driver to fix transport latency. Investigate queue/backpressure, stream cork/uncork behavior, and timestamps; retest pause/resume repeatedly with measured audio/video offset.
+**Goal:** make D+ the automatic, reliable **internal-speaker** output while retaining `MacBook_Speaker_Raw` and the existing patched CS4208 driver as a recoverable base. Deliver actual sound and working A/V synchronization before promoting D+ to the default. **No production-ready D+ implementation or new kernel driver has been released.**
 
-## Observation after the 7.3.0 kernel recovery
+**Current safe state (owner-confirmed):** the old `macbook81-dplus.service` is **disabled/inactive** and `pactl get-default-sink` reports **`MacBook_Speaker_Raw`**. The newest isolated graph experiment did not change this. Do not re-enable the old prototype or make D+ the system default.
 
-The owner confirmed that patched speaker playback and Raw routing work again. A subsequent `systemctl --user is-enabled macbook81-dplus.service` and `is-active` check returned `disabled` and `inactive`. Therefore **the good sound reported at that point does not prove the D+ user service was processing audio**. Starting, enabling, and successful login of that service have not been confirmed in a new diagnostic output. The existing pause/resume A/V-sync blocker remains in effect; do not silently enable D+ as part of a kernel recovery.
+## Verified results and boundaries
 
-Check service state without changing it with `systemctl --user is-enabled macbook81-dplus.service; systemctl --user is-active macbook81-dplus.service`. Disabled/inactive is an expected possible outcome for this optional prototype and is not a kernel-update failure. Audio driver and Raw sink checks are independent.
+| Item | Status on the owner's MacBook | Important limitation |
+|---|---|---|
+| Patched HDA/CS4208 | Kernel `7.3.0-2-cachyos` runs; all three DKMS modules passed **on-disk** checks for it and `6.18.55-2-cachyos-lts`; ALSA exposed `CS4208 Speaker` device 2 | On-disk checks do not prove current module binding, boot image contents or playback on another install |
+| Raw routing | Preferred `MacBook_Speaker_Raw` at S16LE, four channels, 44.1 kHz; playback previously owner-confirmed | Last follow-up commands confirmed the default, not a fresh listening comparison |
+| Original D+ quality | Owner preferred D+ Clarity v4 to earlier profiles and found it close to Big Sur | No proof of Apple DSP equivalence or speaker-protection certification |
+| D+ prototype lifecycle | Multi-second A/V delay after pause/resume; after s2idle wake its output-flow watchdog fired and Raw was temporarily absent; selecting D as default tripped its deliberate guard and a restart loop reached `start-limit-hit` | Wake timing is correlated with the first failure, not a proved kernel root cause |
+| D+ reference | Approved local Python engine inspected; 11 biquads and full FFmpeg chain extracted; five synthetic full-chain renders replicated on CachyOS | Engine/profile remain user-held, not released here pending provenance/licensing review |
+| EQ math | Independent 44.1-kHz double-precision biquads matched FFmpeg (four cases; maximum observed error about `8.77e-14`) | **Not** a test of PipeWire output or the limiter |
+| Clock/rate | Production PipeWire graph uses 48 kHz (allowed rates only `[ 48000 ]`), Raw hardware uses 44.1 kHz | Reusing 44.1-kHz filter coefficients at 48 kHz changes the EQ |
+| 48-kHz EQ audit | Naive unchanged coefficients drift up to ~3.71 dB in sampled 20 Hz–5 kHz band; basic bilinear conversion is closer there but differs by ~2.13 dB at 18 kHz | Experimental high-frequency correction (~0.077 dB *calculated magnitude* error) is **not** a verified native processor or release candidate |
+| Isolated PipeWire | Private server connection, metadata, filter-chain loading, and two test nodes all confirmed; 21 static smoke tests passed | In a private server without session management, both nodes stayed suspended and **zero Port objects** were published even with the opt-in activation probe; **no PCM was processed** |
 
-## Architecture and provenance
+**Decision (2026-10-23): stop iterating on the stripped-down private PipeWire smoke-test harness.** Its purpose—proving native filter-chain module availability—is complete. Its missing ports do not establish a defective `bq_raw` filter, bad hardware driver or production PipeWire incompatibility. Next development must deliver *actual audio*, not another node-enumeration report.
 
-MacBook8,1 uses the existing, separately maintained three-module `macbook12-audio/0.1` HDA/CS4208 DKMS driver and `MacBook_Speaker_Raw` four-channel PCM. D+ is *userspace audio processing*, not a new hardware driver. It creates a temporary stereo sink `MacBook_Speaker_D_Live`, captures that sink's monitor, processes with FFmpeg, and plays `L,R,0,0` into Raw. It does not replace, reinstall or modify the patched kernel modules.
+## Approved D+ v4 reference contract
 
-The owner preferred D v3 to Raw, then preferred D+ Clarity v4 to D v3, and reported v4 very close to Big Sur: macOS slightly clearer and louder at the same displayed 50% setting. **Equal displayed volume percentages are not calibrated equal loudness.** D+ is not demonstrated to reproduce Apple's internal DSP. The macOS report identified AppleHDA layout 100, `DeviceEqID=65536`, stereo output at 44.1 kHz, but not the underlying DSP coefficients.
+The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
 
-D v4 preserves D's **11 biquad stages**, approximately **+8.31 dB pre-limiter gain**, a limiter with **5 ms attack and 80 ms release** running with 176.4-kHz oversampling, and 44.1-kHz `L,R,0,0` output. The v4 change is a **+1 dB presence adjustment around 3 kHz**. This positive gain and limiter are not a physical speaker safety certification. Do not stack another preamp or blindly maximize Raw.
-
-The user's approved engine was supplied separately in the working `macbook81-dplus-service-prototype.zip`, copied into `~/.local/share/macbook81-dplus/dplus-engine.py` by that prototype's installer. **That engine is not yet committed to this repository as a public ready-to-run release**: reproducible packaging and redistribution/validation remain to be completed. The repository documents the confirmed behavior and keeps the runtime code separate from the driver.
-
-## Login autostart — SUSPENDED pending A/V synchronization fix
-
-First stop the currently running manual test or leave it to be managed by the same systemd unit. Ensure Raw is the current system default:
-
-```sh
-pactl get-default-sink
-systemctl --user --no-pager status macbook81-dplus.service
+```text
+stereo float32, 44100 Hz
+ → 11 ordered biquads / channel (FFmpeg f64, transposed DF-II)
+ → +1 dB peaking EQ at 3000 Hz, Q=1
+ → +8.31 dB pregain
+ → 176400-Hz double-precision resampling (4×)
+ → FFmpeg alimiter: limit=0.6683439175686147, attack=5 ms,
+   release=80 ms, linked stereo; automatic level disabled
+ → 44100-Hz resampling → -0.01 dB final trim
+ → L,R,0,0 (four-channel S16LE, 44100 Hz; no dither)
+ → MacBook_Speaker_Raw
 ```
 
-Expected default: `MacBook_Speaker_Raw`. Confirm the unit is the previously manually tested `macbook81-dplus.service`. Do **not** start a second v4 test alongside it.
+The high pregain **must never be used without a verified limiter and headroom checks**. The exact 11 coefficient rows remain in the private extracted reference JSON; neither they nor the engine are currently packaged as redistributable release assets. Equal displayed volume percentages across macOS and CachyOS are not a calibrated loudness comparison.
 
-**The following enable command is retained only as documentation of a future workflow. Do not execute it while the A/V-sync defect is open.**
+## Architecture decision
 
-To enable the existing, manually tested user service for future **logins**:
+**Keep driver and sound processing separate.**
 
-```sh
-systemctl --user enable macbook81-dplus.service
-systemctl --user is-enabled macbook81-dplus.service
-```
+- **Hardware layer:** retain the working three-module `macbook12-audio/0.1` CS4208 DKMS setup, mixer behavior and Raw sink. Fixes to hardware initialization, clock state, amplifier routing and kernel updates belong in [driver issue #2](https://github.com/ltorrecilla/macbook8.1/issues/2) and [audio recovery](audio-update-recovery.md).
+- **D+ layer:** prefer a real-time PipeWire/WirePlumber-compatible processing path using an existing maintained DSP/LV2 implementation where feasible. Use a small native plugin **only if** needed to reproduce the limiter or an essential real-time property. Do not return to the fragile `parecord → FFmpeg → pacat` bridge for production.
+- **Rate contract:** keep the normal PipeWire 48-kHz system graph stable. Evaluate either **(A)** a measured 48-kHz response-matched DSP and limiter, or **(B)** properly isolated 44.1-kHz DSP with bounded resampling. Choose by measured audio parity, CPU use and latency, **not** by a frequency plot alone.
+- **Routing:** initial output must be **manual, per-application, opt-in**, with safe mapping to Raw. Never stack upstream EQ or duplicate rear channels. Default-device selection and system volume integration are later work.
 
-This does **not** change the current default output or force an immediate restart. If it is stopped and Raw is selected, start it with:
+## Work plan — acceptance gates
 
-```sh
-systemctl --user start macbook81-dplus.service
-```
+Treat a checkbox as complete **only when the deliverable was observed**, not merely when a diagnostic script passed. Use [issue #39](https://github.com/ltorrecilla/macbook8.1/issues/39) for ongoing checkboxes and ownership.
 
-Route a single application using KDE's per-app audio selector to **MacBook Speaker (D live test)**. The existing prototype does not change the global default and does not make ordinary volume keys control D's sink. Its guard **stops** if the global default becomes D. Never use KDE's global output selector to make D the default during this test phase.
+### A. Preserve the known-good state — mostly complete
 
-**Next test:** log out and log in, confirm D reappears and Raw remains default:
+- [x] Verify current installed DKMS module files and working `MacBook_Speaker_Raw` routing.
+- [x] Disable the failed old D+ user unit and confirm `disabled`/`inactive` and Raw as default.
+- [ ] Confirm ordinary Raw speaker playback at modest volume after the latest changes; document a known-good kernel and fallback procedure.
 
-```sh
+**Gate:** known-good Raw output and a tested return path. Do not alter Limine, HDA modules or speaker GPIOs to develop D+.
+
+### B. Freeze reference audio — mathematical baseline complete
+
+- [x] Recover and inspect approved v4 engine and full filter order; preserve source digest.
+- [x] Reproduce five offline full-chain synthetic cases on CachyOS, including silence, isolated left/right impulses, and quiet/loud signals; rear outputs exactly zero.
+- [x] Reproduce 44.1-kHz biquad-only math on CachyOS; run 48-kHz response-drift audit.
+- [ ] Add representative level-matched reference material, aligned impulse/transient checks, true-peak and limiter-response comparisons; review source/plugin attribution.
+
+**Gate:** reproducible full-profile audio benchmarks with objective headroom and dynamics measurements, not just EQ magnitude.
+
+### C. Deliver ONE listenable native D+ prototype — next priority
+
+- [ ] Select and document the real-time host/limiter and version; check whether it can reproduce the FFmpeg limiter well enough.
+- [ ] Resolve 48-kHz graph / 44.1-kHz Raw rate handling with measured response, phase, dynamic and latency parity. Avoid shipping the naive conversion.
+- [ ] Build a **complete** opt-in processing chain: 11 biquads, +1 dB presence, bounded gain + working limiter, stereo output and explicit `L,R,0,0` Raw mapping.
+- [ ] Produce an actual per-app listening A/B on the MacBook with one reproducible start/stop command and no persistent default change.
+- [ ] Capture and compare processed PCM against the approved reference; measure clipping/peaks, CPU demand and end-to-end latency.
+
+**Gate:** audible, safe, bounded-latency D+ playback on real hardware. If this approach cannot deliver actual PCM without more infrastructure churn, stop and switch DSP architecture instead of making another smoke harness.
+
+### D. Stabilize actual playback
+
+- [ ] Confirm owner-approved sound vs D+ v4 and Raw at matched levels.
+- [ ] Run at least 20 pause/resume/seek video cycles, 30 minutes continuous playback and A/V alignment measurements relative to Raw; **no growing delay**.
+- [ ] Confirm modest-volume behavior, no uncontrolled gain/clipping, and reasonable CPU/xrun results on Core M hardware.
+- [ ] Verify stop/crash cleanup, PipeWire restart, lid suspend/resume, and headphone/Bluetooth handling without taking over other devices.
+
+**Gate:** reproducible sound parity (or explicit owner acceptance of measured differences) and reliable video synchronization.
+
+### E. Default output, packaging and maintenance — only after C/D pass
+
+- [ ] Implement WirePlumber/KDE preferred internal-speaker output, normal volume keys, explicit fallback to Raw and respect for headphones/external devices.
+- [ ] Verify three cold boots, login/logout, five suspend/resume cycles, failure recovery and a kernel update on hardware.
+- [ ] Provide reversible `check/install/verify/uninstall` workflow; audit DSP and driver licensing, ownership and clean-install safety.
+- [ ] Update README hardware status only after tests; release the first **opt-in** package before recommending D+ as default.
+
+**Gate:** user does not need to start D+ manually and can always return to working Raw without rebuilding drivers.
+
+## Operational safety and rollback
+
+The old prototype intentionally **refuses to be the system default** and has a known transport latency/restart failure. Do not enable it for this plan:
+
+```bash
 systemctl --user is-enabled macbook81-dplus.service
 systemctl --user is-active macbook81-dplus.service
 pactl get-default-sink
-pactl list short sinks
 ```
 
-Then explicitly route just one application and listen at modest volume. The systemd unit requires the graphical user session's PipeWire/Pulse/WirePlumber services. It is **login autostart**, not a boot-time system service and not a guarantee of reliable operation after sleep or PipeWire restart.
+Expected baseline: `disabled`, `inactive`, `MacBook_Speaker_Raw`. If the old prototype is unexpectedly active, stop and disable **that exact unit**:
 
-## Troubleshooting
-
-```sh
-journalctl --user -b -u macbook81-dplus.service -n 100 --no-pager
-systemctl --user --no-pager status macbook81-dplus.service
-pactl list short sinks
-pactl get-default-sink
-```
-
-If D fails, return to Raw using normal KDE output selection or `pactl set-default-sink MacBook_Speaker_Raw`. If the temporary D sink survives a failure, **do not unload unknown PipeWire modules**. Investigate ownership and service cleanup first.
-
-Stop it for this session:
-
-```sh
-systemctl --user stop macbook81-dplus.service
-```
-
-Disable autostart **and** stop:
-
-```sh
+```bash
 systemctl --user disable --now macbook81-dplus.service
+pactl set-default-sink MacBook_Speaker_Raw
 ```
 
-For the previously downloaded prototype, its extracted folder also offers `python3 manage.py disable` and `python3 manage.py remove`. The latter checks for exact matching package files and can refuse removal if locally modified. Preserve those files rather than forcing deletion.
+This doesn't delete its local code or rebuild HDA. For any new D+ test, prefer an isolated per-app manual selector and provide a verified stop/cleanup operation **before** activation. Do not unload unknown PipeWire modules, force global sample-rate changes, run an unreviewed Ubuntu-oriented root installer, or replace a working kernel.
 
-## Kernel updates remain a separate problem
+## References and maintenance
 
-D+ requires the kernel driver and Raw sink to work. Run the repository's read-only `python3 scripts/repair-audio.py --check` after updates, and see [audio-update-recovery.md](audio-update-recovery.md) for guarded repair. No D+ audio service can restore a missing kernel-specific DKMS build. This service must not change Limine boot parameters, speaker GPIOs, HDA modules, or `IEC958` mixer workaround.
+- [Offline D+ tests and experimental isolated PipeWire research](dplus-offline-testing.md) — **historical technical evidence, not the next required workflow**.
+- [Audio-update recovery](audio-update-recovery.md) and [source packaging blockers](audio-packaging.md).
+- [Earlier listening / speaker-tone work](https://github.com/ltorrecilla/macbook8.1/issues/1).
+- [Implementation task tracker](https://github.com/ltorrecilla/macbook8.1/issues/39).
 
-## Release gates
-
-- [x] Owner confirmed manual startup, playback, and acceptable sound quality on one MacBook8,1.
-- [ ] **BLOCKER: correct multi-second audio delay on pause/resume, verify with repeated video tests.**
-- [ ] Verify actual login autostart and clean logout.
-- [ ] Validate service stop/cleanup, crash/restart, headphone handling and PipeWire restarts.
-- [ ] Test suspend/resume and at least one kernel-update cycle.
-- [ ] Reconcile per-app routing, system volume keys and default-sink preference without unsafe automatic takeover.
-- [ ] Publish audited and pinned D+ engine source with documented credits/license and tests; test a new-machine installation.
-- [ ] Re-evaluate slight macOS clarity/loudness difference separately from reliable deployment.
-
-No claim of a universal installer, verified speaker protection, or exact Apple DSP equivalence is made.
+The previous multi-revision experimental diagnostics remain in Git history. Keep the repository small; **do not add more diagnostic-harness revisions** unless required to deliver an end-to-end audio output or to investigate a newly observed fault. Real hardware acceptance remains separate from simulated unit tests.
