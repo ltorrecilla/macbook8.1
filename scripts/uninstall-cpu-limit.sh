@@ -5,6 +5,9 @@ set -euo pipefail
 unit=/etc/systemd/system/macbook81-cpu-cap.service
 helper=/usr/local/libexec/macbook81-cpu-cap
 config=/etc/macbook81-cpu-cap.max-khz
+marker=/etc/macbook81-cpu-cap.max-khz.owner
+# shellcheck source=cpu-config-ownership.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/cpu-config-ownership.sh"
 if [[ ! -f "$unit" ]]; then
   echo 'Our CPU cap service is not installed.'
   exit 0
@@ -13,8 +16,14 @@ if ! grep -q '^# Managed by macbook81-starter' "$unit"; then
   echo 'Refusing to remove an unrecognized service file' >&2
   exit 1
 fi
+removal=$(cpu_cap_config_removal_policy "$config" "$marker") || exit 1
 systemctl disable --now macbook81-cpu-cap.service
-rm -f -- "$unit" "$config"
+rm -f -- "$unit"
+if [[ "$removal" == managed ]]; then
+  rm -f -- "$config" "$marker"
+else
+  printf 'Preserved unmarked legacy config: %s\n' "$config"
+fi
 if [[ -f "$helper" ]] && grep -q '^# macbook81-cpu-cap runtime helper\.' "$helper"; then
   rm -f -- "$helper"
 fi
