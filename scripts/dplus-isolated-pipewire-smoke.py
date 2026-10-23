@@ -40,11 +40,13 @@ context.modules = [
     # Metadata protocol/factory support is required for pw-dump binding.
     # Limited to this generated disposable server configuration.
     { name = libpipewire-module-metadata }
-    # ONLY the test server's private manager socket has unrestricted access.
-    # No system-wide security setting or legacy permission fallback is changed.
+    # Both sockets belong to this disposable test-only PipeWire server.
+    # The manager probe uses -manager; the filter-chain streams use the base.
+    # Neither socket nor this permission map exists in the production daemon.
     { name = libpipewire-module-access
       args = {
         access.socket = {
+          dplus-test-0 = "unrestricted"
           dplus-test-0-manager = "unrestricted"
         }
       }
@@ -100,6 +102,24 @@ def scan_objects(objects):
              if isinstance(o, dict) and o.get("type") == "PipeWire:Interface:Node"
              and isinstance(o.get("info"), dict)}
     return CAPTURE in nodes and PLAYBACK in nodes, nodes
+
+def inventory_summary(objects):
+    """Only summarize object types/names from our private test server."""
+    from collections import Counter
+    kinds = Counter(str(obj.get("type", "?")) for obj in objects if isinstance(obj, dict))
+    names = []
+    for obj in objects:
+        if not isinstance(obj, dict):
+            continue
+        props = obj.get("info", {}).get("props", {})
+        if not isinstance(props, dict):
+            continue
+        name = props.get("node.name")
+        if name is not None:
+            names.append(str(name))
+    return {"object_types": dict(sorted(kinds.items())),
+            "advertised_node_names": sorted(names)[:15]}
+
 
 def safe_env(root):
     env = os.environ.copy()
@@ -192,8 +212,10 @@ def private_phase(root, name, with_filter):
                             ok, nodes = scan_objects(objects)
                             if ok:
                                 return True
-                            last_error = "connected, but filter nodes absent: " + repr(
-                                sorted(str(n) for n in nodes))[:300]
+                            last_error = (
+                                "connected but expected filter nodes absent: "
+                                + json.dumps(inventory_summary(objects), sort_keys=True)[:1000]
+                            )
                 except subprocess.TimeoutExpired as exc:
                     stderr = exc.stderr or b""
                     if isinstance(stderr, bytes):
