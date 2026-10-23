@@ -4,6 +4,8 @@ The project's target is the **12-inch Early 2015 MacBook8,1**. Fixes are not aut
 
 Return to [README and status tracker](../README.md).
 
+**Before a CachyOS kernel reboot:** follow the [kernel-update safety playbook](kernel-update-playbook.md) to check both the DMA keyboard/trackpad workaround and the separate audio driver dependency.
+
 ## Hardware and compatibility
 
 | Area | Primary guide | Current scope |
