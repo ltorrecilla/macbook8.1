@@ -154,6 +154,50 @@ def private_filter_ports(objects):
     return sorted(ports, key=lambda x: (x["node"], x["port"]))
 
 
+def private_graph_summary(objects):
+    """Report bounded structural details from this disposable PipeWire registry.
+
+    Include unassociated ports as well: a missing node.id relation must not
+    be misreported as evidence that the server published zero port objects.
+    """
+    targets = {CAPTURE, PLAYBACK}
+    nodes = []
+    ports = []
+    for obj in objects:
+        if not isinstance(obj, dict):
+            continue
+        kind = obj.get("type")
+        info = obj.get("info")
+        info = info if isinstance(info, dict) else {}
+        props = info.get("props")
+        props = props if isinstance(props, dict) else {}
+        if kind == "PipeWire:Interface:Node" and props.get("node.name") in targets:
+            nodes.append({
+                "id": obj.get("id"),
+                "name": props.get("node.name"),
+                "state": info.get("state", "not reported"),
+                "n_input_ports": info.get("n_input_ports", "not reported"),
+                "n_output_ports": info.get("n_output_ports", "not reported"),
+                "audio_channels": props.get("audio.channels", "not reported"),
+                "media_class": props.get("media.class", "not reported"),
+                "passive": props.get("node.passive", "not reported"),
+            })
+        if kind == "PipeWire:Interface:Port":
+            ports.append({
+                "id": obj.get("id"),
+                "node.id": props.get("node.id", "not reported"),
+                "port.name": props.get("port.name", "not reported"),
+                "direction": info.get("direction", props.get("port.direction", "not reported")),
+                "audio.channel": props.get("audio.channel", "not reported"),
+            })
+    return {
+        "test_nodes": sorted(nodes, key=lambda row: str(row["name"])),
+        "total_published_port_objects": len(ports),
+        "published_port_sample": ports[:12],
+        "matched_filter_port_count": len(private_filter_ports(objects)),
+    }
+
+
 def safe_env(root):
     env = os.environ.copy()
     env.update({
@@ -245,6 +289,9 @@ def private_phase(root, name, with_filter):
                             ok, nodes = scan_objects(objects)
                             if ok:
                                 if with_filter:
+                                    print("Private registry structure:", flush=True)
+                                    print(json.dumps(private_graph_summary(objects), indent=2),
+                                          flush=True)
                                     ports = private_filter_ports(objects)
                                     print("Private filter-chain port inventory:", flush=True)
                                     if ports:
