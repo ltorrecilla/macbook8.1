@@ -49,6 +49,31 @@ class IsolatedPipeWireSmokeTests(unittest.TestCase):
         self.assertTrue(mod.scan_objects(objects)[0])
         self.assertFalse(mod.scan_objects(objects[:1])[0])
 
+    def test_core_phase_contains_protocol_but_no_filter(self):
+        config = mod.config_text(include_filter=False)
+        self.assertIn("libpipewire-module-protocol-native", config)
+        self.assertNotIn("libpipewire-module-filter-chain", config)
+        self.assertNotIn("bq_raw", config)
+        self.assertTrue(config.strip().endswith("]"))
+
+    def test_client_environment_preserves_private_socket_and_client_defaults(self):
+        with tempfile.TemporaryDirectory() as d:
+            env = mod.safe_env(Path(d))
+            env["PIPEWIRE_NO_CONFIG"] = "true"
+            client = mod.client_env(env)
+            self.assertNotIn("PIPEWIRE_NO_CONFIG", client)
+            self.assertNotIn("PIPEWIRE_DAEMON", client)
+            self.assertNotIn("PIPEWIRE_CORE", client)
+            self.assertEqual(client["PIPEWIRE_REMOTE"], mod.SOCKET)
+            self.assertEqual(client["PIPEWIRE_RUNTIME_DIR"], str(Path(d) / "runtime"))
+
+    def test_probe_uses_explicit_remote_and_socket_ready_check(self):
+        source = SCRIPT.read_text(encoding="utf-8")
+        self.assertIn('"--remote=" + SOCKET', source)
+        self.assertIn('socket_path.is_socket()', source)
+        self.assertIn('private_phase(root, "core", with_filter=False)', source)
+        self.assertIn('private_phase(root, "filter", with_filter=True)', source)
+
     def test_no_service_or_pulse_actions(self):
         s = SCRIPT.read_text(encoding="utf-8")
         self.assertNotIn("systemctl", s)
