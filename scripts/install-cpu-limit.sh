@@ -65,6 +65,7 @@ install -Dm755 "$helper_src" "$helper"
 install -Dm644 "$service_src" "$unit"
 printf '%s\n' "$max_khz" > "$config"
 chmod 0644 "$config"
+cpu_cap_config_mark "$config" "$marker" || fail 'Could not record CPU config ownership'
 systemctl daemon-reload
 systemctl enable macbook81-cpu-cap.service
 systemctl restart macbook81-cpu-cap.service
