@@ -99,6 +99,22 @@ If the last command fails, preserve its printed **private daemon log** and stop:
 Continue verifying `pactl get-default-sink` remains `MacBook_Speaker_Raw`; keep the original D+ user service disabled. The disconnected smoke test's unity coefficients are **not** the real D+ v4 EQ and no limiter or channel mapping is included.
 
 
+### Isolated smoke test: troubleshooting the first 2026-10-23 run
+
+The owner confirmed the initial smoke script's six safety unit tests and dry-run config passed, but its client `pw-dump` timed out after two seconds with an empty daemon log. The working system default was still `MacBook_Speaker_Raw`. This is **not** evidence that the 48-kHz `bq_raw` itself failed; the client was unable to return a graph snapshot.
+
+The diagnostic is now split into two separately created private PipeWire servers. **Stage 1** creates only a private native-protocol core/socket and tests client handshake. **Stage 2** uses a fresh private server with a pair of identity `bq_raw` filters. The program waits for each UNIX socket to exist, calls `pw-dump --remote=dplus-test-0` explicitly with the matching private runtime directory, uses the standard client configuration, and reports which phase timed out or which nodes were missing. Private logs are included on failure. Its own child daemons are terminated on exit. The host's normal PipeWire and WirePlumber remain untouched.
+
+After pulling the updated code, run as ordinary user:
+
+```bash
+python3 -m unittest discover -s tests -p 'test_dplus_isolated_pipewire_smoke.py' -v
+python3 scripts/dplus-isolated-pipewire-smoke.py
+pactl get-default-sink
+```
+
+**Interpretation:** If Stage 1 fails, work on the private socket/client configuration; if Stage 1 passes and Stage 2 fails, focus on filter module initialization and node publication. Do not increase the timeout indefinitely, switch to the production server, install a filter graph into the user's config, or restart audio services to make this smoke test pass.
+
 ## What is actually tested
 
 - Silence, left impulse, right impulse, quiet synthetic audio, loud synthetic audio.
