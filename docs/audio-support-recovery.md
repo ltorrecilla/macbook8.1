@@ -1,5 +1,7 @@
 # MacBook8,1 audio support-file recovery — 17 October 2026
 
+> **Historical source-recovery evidence (October 17, 2026).** Checksums and recovered helper descriptions are retained for provenance. This is not a fresh-install procedure. Consult [audio packaging](audio-packaging.md) for outstanding release blockers and [audio update recovery](audio-update-recovery.md) for existing installations.
+
 **Status: all three previously missing support files recovered. This is an evidence milestone, not an installable release.**
 
 ## Archive verification
