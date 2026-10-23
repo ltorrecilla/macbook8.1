@@ -18,6 +18,7 @@
 | `collect-audio-support.sh` | READ / WRITE output | Archives three narrowly named recovery helpers; inspect source and paths |
 | `compare-raw-voice.py` | EXPERIMENT / WRITE output | Acoustic comparison, not a driver repair |
 | `dplus-offline-reference.py` | READ profile / WRITE local output | Generates synthetic reference audio + metrics via FFmpeg; no device/system audio changes; requires private profile |
+| `dplus-biquad-parity.py` | READ profile / WRITE local output | Offline FFmpeg-vs-Python D+ biquad parity and inert graph export; **not a PipeWire service/config** |
 | `cpu-cap-control.sh` | LIBRARY / PRIVILEGED | Writes CPU sysfs controls when run by systemd, not a normal diagnostic |
 | `install-camera.sh` | PRIVILEGED | Downloads driver and firmware, registers/builds DKMS; matching laptop required |
 | `install-cpu-limit.sh` | PRIVILEGED | Installs/starts CPU cap systemd service |
