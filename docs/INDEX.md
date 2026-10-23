@@ -6,6 +6,8 @@ Return to [README and status tracker](../README.md).
 
 **Before a CachyOS kernel reboot:** follow the [kernel-update safety playbook](kernel-update-playbook.md) to check both the DMA keyboard/trackpad workaround and the separate audio driver dependency.
 
+**Installing or repairing a subsystem?** Start with the [installation, verification and rollback matrix](installation-matrix.md) before following a subsystem-specific guide.
+
 ## Hardware and compatibility
 
 | Area | Primary guide | Current scope |
