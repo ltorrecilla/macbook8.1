@@ -42,6 +42,8 @@ For each available script and its side effects, use the [script reference](scrip
 
 The [Phase 3 dependency map](phase3-dependency-map.md) records which script, systemd and CI paths must remain compatible before any relocation.
 
+**Release preparation:** [Phase 4 safety gates and hardware acceptance checklist](phase4-release-safety.md) documents what must be verified before installers or releases can be considered stable.
+
 ## Maintenance and contributor references
 
 - [Repository cleanup roadmap](repository-cleanup-roadmap.md) and [Phase 1 disposition](phase1-disposition-2026-10-23.md)
