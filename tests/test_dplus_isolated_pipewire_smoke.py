@@ -74,6 +74,23 @@ class IsolatedPipeWireSmokeTests(unittest.TestCase):
         self.assertIn('private_phase(root, "core", with_filter=False)', source)
         self.assertIn('private_phase(root, "filter", with_filter=True)', source)
 
+    def test_private_manager_socket_only_gets_access(self):
+        config = mod.config_text()
+        self.assertIn("libpipewire-module-access", config)
+        self.assertIn('dplus-test-0-manager = "unrestricted"', config)
+        self.assertNotIn("access.legacy", config)
+        self.assertNotIn('dplus-test-0 = "unrestricted"', config)
+        self.assertIn('socket_path = runtime / (SOCKET + "-manager")',
+                      SCRIPT.read_text(encoding="utf-8"))
+
+    def test_both_private_phases_load_access_module(self):
+        core = mod.config_text(include_filter=False)
+        full = mod.config_text(include_filter=True)
+        self.assertIn("libpipewire-module-access", core)
+        self.assertIn("libpipewire-module-access", full)
+        self.assertNotIn("libpipewire-module-filter-chain", core)
+        self.assertIn("libpipewire-module-filter-chain", full)
+
     def test_no_service_or_pulse_actions(self):
         s = SCRIPT.read_text(encoding="utf-8")
         self.assertNotIn("systemctl", s)
