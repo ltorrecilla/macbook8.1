@@ -12,7 +12,7 @@ Experimental, hardware-specific fixes and diagnostics for CachyOS. **Not a compl
 | Audio output | Patched CS4208 speaker and Raw sink recovered on 7.3.0-2; fresh installation unverified | [Audio recovery](docs/audio-update-recovery.md) |
 | Camera | Live image confirmed using mpv; desktop app discovery and wrapper fresh-install still open | [Camera guide](docs/camera.md) |
 | CPU frequency limit | Initial cap confirmed; update/resume persistence and full rollback still under study | [CPU guide](docs/cpu-frequency-limit.md) |
-| D+ speaker processing | Manually preferred sound; A/V delay blocks automatic startup | [D+ guide](docs/dplus-service.md) |
+| D+ speaker processing | Approved v4 DSP reproduced offline; native PipeWire filter-chain initializes but no native PCM playback validated; old service disabled after latency/resume failures | [D+ status and tasks](docs/dplus-service.md), [Issue #39](https://github.com/ltorrecilla/macbook8.1/issues/39) |
 | Bluetooth | Pairing worked after machine-specific ACPI/DSDT workaround; no reusable installer | No reusable installer |
 | Battery reporting and sleep drain | Inconsistent charge readings and drain under s2idle; EC experiment not validated | [Sleep experiment](docs/sleep-battery-drain.md) |
 | Hibernation | Preparation experimental; hardware restore not confirmed | [Hibernation guide](docs/hibernation.md) |
@@ -40,6 +40,7 @@ Do not run experimental hibernation preparation on an unreviewed installation. P
 - [Maintenance and remaining work](docs/repository-cleanup-roadmap.md)
 - [Phase 4 release-safety gates](docs/phase4-release-safety.md)
 - [Audio source packaging and licensing blockers](docs/audio-packaging.md)
+- [D+ development roadmap, verified results and remaining tasks](docs/dplus-service.md)
 
 Offline GitHub Actions cover syntax, unit tests, and a heuristic documentation-link checker. **Passing CI does not verify actual MacBook hardware.**
 
