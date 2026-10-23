@@ -1,42 +1,37 @@
-# Sleep battery drain: EC wakeup experiment (2026-10-23)
+# MacBook8,1 sleep battery drain — 2026-10-23 tests
 
-**Status: proposed test, not yet applied or validated on hardware.** Do not claim a battery improvement or a working lid-wake behavior.
+**Status: investigated, not fixed.** CachyOS `7.3.0-2-cachyos`; `/sys/power/mem_sleep` reports `[s2idle] deep`. Two actual `s2idle` sessions resumed successfully. Battery readings suggest high sleep consumption. A runtime EC wakeup tweak **may** have lowered consumption, but the brief unmatched measurements do not establish causality. No persistent boot or sleep setting is recommended yet.
 
-## Machine observations
+## What was discovered
 
-- Model: MacBook8,1 (12-inch, Early 2015); CachyOS kernel `7.3.0-2-cachyos`.
-- `cat /sys/power/mem_sleep`: `[s2idle] deep` (s2idle is active; deep merely advertised).
-- `cat /sys/module/acpi/parameters/ec_no_wakeup`: `N`.
-- Current command line includes `mem_sleep_default=s2idle` and the *working, kernel-specific* DesignWare DMA initcall blacklist:
-  `initcall_blacklist=dw_pci_driver_init,__initstub__kmod_dw_dmac_pci__437_139_dw_pci_driver_init6,__initstub__kmod_dw_dmac_pci__442_139_dw_pci_driver_init6`.
-- Apple ACPI embedded controller initialized; log says `ACPI: EC: GPE=0x4e`. The provided output was EC initialization, **not** evidence of premature wakeups.
-- Battery percentage and charge/energy reports have previously disagreed; do not trust a single percentage reading as proof of drain.
+- **KDE PowerDevil controls lid actions.** Lid close originally requested hibernation, with an unsuccessful apparent restore/fresh boot. A subsequent choice selected **hybrid-sleep**, which resumed, but was not a valid plain suspend baseline. Changing KDE to **Standby** produced logged `PM: suspend entry (s2idle)` and `PM: suspend exit`.
+- **Use the battery exposed by the actual driver:** `/sys/class/power_supply/macsmc-battery`, not `BAT0`. Its `energy_now` field is in micro-Wh. `power_now` is unsupported (error -95) and should not be queried repeatedly. Battery percentage/energy readings have previously been inconsistent.
+- EC workaround under consideration: runtime `acpi.ec_no_wakeup=1` (the sysfs parameter is `/sys/module/acpi/parameters/ec_no_wakeup`); it may change lid-triggered wake behavior and has **not** been justified as a permanent Limine argument. Discussion: https://discuss.cachyos.org/t/battery-discharge-in-sleep/4836
 
-Discussion prompting investigation: https://discuss.cachyos.org/t/battery-discharge-in-sleep/4836
+## Two short measurements
 
-## Hypothesis and risks
+| Item | Ordinary s2idle, EC=N | Second s2idle, EC=Y assumed |
+|---|---:|---:|
+| Battery before (local time) | 21:12:48; 37,637,875 µWh; 96% | 21:28:34; 36,018,422 µWh; 92% |
+| Battery after (local time) | 21:24:09; 36,810,840 µWh; 94% | 21:36:40; 35,511,350 µWh; 91% |
+| Suspend entry / exit | 21:13:19 / 21:23:55 | 21:28:44 / 21:36:24 |
+| Actual suspend duration | 636 s (10m36s) | 460 s (7m40s) |
+| Full measurement interval | 681 s | 486 s |
+| Energy lost over **full** interval | 0.827035 Wh | 0.507072 Wh |
+| Energy / suspend time (biased power estimate) | 4.68 W | 3.97 W |
+| Energy / full measurement interval | 4.37 W | 3.76 W |
+| Resume | Confirmed via same-boot log | Confirmed via same-boot log |
 
-`acpi.ec_no_wakeup=1` may prevent EC wake interrupts during s2idle. This is **not a proven fix** for this laptop. It can disable lid-related wake events. Suspend, lid reopening, power-button wake, battery usage, and recovery need to be tested. Never casually replace s2idle with deep: Apple SPI keyboard/trackpad resume reliability is a concern, and a working configuration already uses s2idle.
+**Interpretation:** estimated power is about 14–15% lower in the second interval, but **neither estimate is a measurement of suspend-only power**. Both battery samples include awake time before/after suspend. The tests differ in duration, battery charge state, and prior activity; the fuel gauge is imperfect. The user did not include a direct readback confirming `ec_no_wakeup=Y` during test two; it is inferred from the intended procedure. The consumption is still high even under that assumption.
 
-## Test, in order
+The earlier hybrid-sleep measurement must **not** be compared as if it were plain s2idle. The machine was reported warm during the earlier non-plain-suspend test.
 
-1. Save work; ensure an alternative way to power on and a known-good boot entry. Unplug charger for drain measurements. Record `date`, `cat /sys/power/mem_sleep`, `cat /sys/module/acpi/parameters/ec_no_wakeup`, `cat /proc/cmdline`, and battery raw values from `/sys/class/power_supply/BAT0/` (`energy_now` or `charge_now`, `voltage_now`, `capacity`, `status`, whichever exist).
-2. If writable, enable **runtime only** with `echo Y | sudo tee /sys/module/acpi/parameters/ec_no_wakeup`. Verify it reads `Y`; verify `[s2idle] deep` remains unchanged. If write fails, stop; do not assume it applied.
-3. Test one brief suspend, then reopen lid and/or press power to wake. Check keyboard, trackpad, speaker, camera and networking where practical. If unable to resume, use a controlled recovery and revert.
-4. Only after reliable resume, make a measured unplugged comparison: same initial charge range and background conditions, identical sleep duration (a longer interval, e.g. several hours, is more informative). Record timestamps, `/sys/class/power_supply/BAT0/` raw units, percentages, and journal suspend entry/exit/wakeup reasons. Beware unreliable battery fuel-gauge values.
-5. If safe and demonstrably helpful, **then** consider adding `acpi.ec_no_wakeup=1` to Limine while retaining `mem_sleep_default=s2idle` and the *verified for each installed kernel* DMA workaround. Back up Limine configuration first; verify effective `/proc/cmdline` and wake behavior after reboot. This is a separate approval/test milestone, not a change made in this document.
+## Safety and next steps
 
-Rollback of runtime experiment: `echo N | sudo tee /sys/module/acpi/parameters/ec_no_wakeup`, verify `N`. A reboot should also restore boot default if no persistent parameter was added. If the system cannot wake, forced power off risks unsaved data; use only as a last resort. If added persistently later, remove only the new parameter from the boot config and regenerate boot entries following the documented Limine procedure.
+1. **Return to baseline if still enabled:** `echo N | sudo tee /sys/module/acpi/parameters/ec_no_wakeup`, then verify `cat /sys/module/acpi/parameters/ec_no_wakeup`. This runtime change is not in Limine.
+2. Keep KDE lid close set to **Standby**, not Hibernate, Hybrid Sleep, or Suspend-then-Hibernate until resume reliability is established. Preserve working `mem_sleep_default=s2idle` and the kernel-specific DesignWare DMA `initcall_blacklist`.
+3. For any later comparison, log the **actual** EC value immediately before and after each interval, require similar charge level and equal suspend durations, minimize awake measurement overhead, and record `date -Is`, `energy_now`, `charge_now`, `capacity`, and the journal suspend timestamps.
+4. If repeated tests still show high drain, investigate device/runtime power states and wake events. Do not assume the EC is responsible merely because ACPI advertises wake-capable devices.
+5. **Do not permanently add `acpi.ec_no_wakeup=1` to Limine** or switch to `deep` on the basis of these two tests. Test wake from lid and power button separately before any persistent change.
 
-## Open evidence checklist
-
-- [ ] Runtime write accepted and read-back `Y`.
-- [ ] Short suspend/resume works, including lid/power-button behavior.
-- [ ] Repeated resume and peripheral regression checks complete.
-- [ ] Baseline and modified measured sleep periods recorded with raw battery values.
-- [ ] Logs show real suspend intervals and any EC-related wakes.
-- [ ] Decision: revert / retain runtime only / propose persistent Limine setting.
-- [ ] If persistent: boot configuration backed up, updated, reboot verified and rollback tested.
-- [ ] Hibernation remains independent and **untested**; see [hibernation](hibernation.md).
-
-Do not label this a fix until meaningful measurement and regression testing demonstrate improvement.
+Hibernation is separate and remains experimentally configured/unverified for reliable restore; see [hibernation notes](hibernation.md). The original per-kernel DMA workaround stays intact. No script or installed configuration was modified by this documentation update.
