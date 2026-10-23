@@ -196,6 +196,26 @@ python3 scripts/dplus-isolated-pipewire-smoke.py
 pactl get-default-sink
 ```
 
+### Optional Stage 3: unlinked-stream activation probe (M3.1)
+
+The owner verified **18/18** static tests; both private PipeWire stages passed. In the disposable server the two unity-filter nodes were reported **suspended** with `node.passive=true`; the entire private registry contained **zero Port objects**. This rules out a node-id parsing problem in the earlier report. The source of the suspension/port registration behavior is not yet proven.
+
+PipeWire's node-running documentation states that passive ports do not cause linked peers to activate and that `node.always-process=true` requests processing even without a link. To test the consequence safely, the smoke script now has an **explicit opt-in** `--probe-activation`. It keeps Stages 1–2 unchanged, then launches a **third independent disposable private server**, setting **only that server's** two test streams to `node.passive=false`, `node.always-process=true`, and `node.autoconnect=false`. There are still no test PCM files, audio links, hardware outputs, ALSA devices, session manager, or normal PipeWire configuration changes. The script terminates its own child afterward.
+
+Run **without sudo** from the correct repository checkout:
+
+```bash
+cd /home/luis/git/macbook/macbook8.1
+git pull --ff-only
+python3 -m unittest discover -s tests -p 'test_dplus_isolated_pipewire_smoke.py' -v
+python3 scripts/dplus-isolated-pipewire-smoke.py --probe-activation
+pactl get-default-sink
+```
+
+The baseline two stages must still PASS. Stage 3 only PASSes if actual Port objects are published. If Stage 3 cannot publish ports, the script exits nonzero and displays its private diagnostic log. **Do not work around that by playing audio to Raw or changing shared user audio services.** This diagnostic does not establish sample-level DSP parity even if Port objects appear.
+
+PipeWire reference: https://docs.pipewire.org/devel/page_running.html
+
 ## What is actually tested
 
 - Silence, left impulse, right impulse, quiet synthetic audio, loud synthetic audio.
