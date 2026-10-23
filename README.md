@@ -2,6 +2,11 @@
 
 Experimental hardware support for the 12-inch MacBook (Early 2015). This project is not yet a complete one-command hardware installer.
 
+## New investigations and maintenance plan (2026-10-23)
+
+- [Sleep battery drain and EC wakeup experiment](docs/sleep-battery-drain.md) — proposed runtime-only test of `acpi.ec_no_wakeup=1`; **not yet tested** or installed persistently. Preserve `s2idle` and the existing kernel-specific SPI/DMA workaround.
+- [Repository cleanup roadmap](docs/repository-cleanup-roadmap.md) — phased audit, documentation consolidation, safe script organization, regression testing, and eventual releases; **no cleanup executed yet**.
+
 ## Fix tracker
 
 **Latest repository update: 2026-10-23.** **Working** means the owner confirmed that behavior on the original MacBook8,1. **Open** means a resolution is not yet confirmed. Installer availability and reboot, suspend/resume, kernel-update, and other-machine validation are tracked separately.
