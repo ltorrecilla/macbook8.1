@@ -25,6 +25,26 @@ Run offline unit tests (no FFmpeg or private profile needed):
 python3 -m unittest discover -s tests -p 'test_dplus_offline_reference.py' -v
 ```
 
+## Milestone 2.3 — Biquad-only equivalence (no live device)
+
+After the five full-chain offline reference tests pass, run the new **11-biquad-only** comparison. It does not change, enable or start audio services, default sinks, PipeWire modules, or kernel drivers.
+
+```bash
+python3 scripts/dplus-biquad-parity.py \
+  --profile "$HOME/Downloads/dplus-v4-reference-profile.json" \
+  --output-dir "$HOME/Downloads/dplus-v4-eq-parity"
+```
+
+The output folder must be absent or empty. It generates a `parity-report.json` that compares a separate Python f64 TDII implementation with FFmpeg's eleven identical biquads (stereo silence, left/right impulse, stereo tones). It also generates a **review-only, inert** `biquad-only-filter.graph` with 22 PipeWire `bq_raw` filters, 11 per channel. The graph is **not** an installable PipeWire module or safe speaker chain: no +1 dB presence, no pre-gain/limiter/oversampling, no `L,R,0,0` mapping or restart/recovery logic. **Do not copy it into ~/.config/pipewire**, or set it as a default sink.
+
+The standalone parity test validates mathematical interpretation of the source biquads vs FFmpeg, **not** the actual PipeWire DSP execution. Next gates are sample-aligned native PipeWire evaluation of `bq_raw` and the separate extra 3-kHz band, followed by limiter, gain, sample-rate, mapping, real-time and A/V-sync tests.
+
+Run portable unit tests:
+
+```bash
+python3 -m unittest discover -s tests -p 'test_dplus_biquad_parity.py' -v
+```
+
 ## What is actually tested
 
 - Silence, left impulse, right impulse, quiet synthetic audio, loud synthetic audio.
