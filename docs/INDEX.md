@@ -1,65 +1,33 @@
-# Documentation index — MacBook8,1 on CachyOS
+# MacBook8,1 documentation
 
-The project's target is the **12-inch Early 2015 MacBook8,1**. Fixes are not automatically portable to other Apple laptops. Some steps require root privileges or modify kernel, DKMS, firmware, power-management or audio settings. **Read the linked guide and rollback path before executing a script.** A working result on one machine is not a validated general installer.
+For the **12-inch Early 2015 MacBook on CachyOS**. These are hardware-specific results, not a validated all-in-one installer. Return to the [README and tested status](../README.md).
 
-Return to [README and status tracker](../README.md).
+## Use and recovery
 
-**Before a CachyOS kernel reboot:** follow the [kernel-update safety playbook](kernel-update-playbook.md) to check both the DMA keyboard/trackpad workaround and the separate audio driver dependency.
+| Area | Guide |
+|---|---|
+| Keyboard, trackpad, kernel updates | [Kernel-update playbook](kernel-update-playbook.md) and [recorded 7.3.0 regression](kernel-update-regression-2026-10-22.md) |
+| Camera | [FaceTime HD camera](camera.md) |
+| CPU limiting | [CPU cap](cpu-frequency-limit.md) |
+| Audio | [Recovery for an existing driver](audio-update-recovery.md), [future driver packaging](audio-packaging.md) |
+| Sound processing | [Experimental D+ service](dplus-service.md) |
+| Battery and sleep | [Unverified EC-wakeup experiment](sleep-battery-drain.md) |
+| Hibernation | [Experimental, machine-specific preparation](hibernation.md) |
 
-**Installing or repairing a subsystem?** Start with the [installation, verification and rollback matrix](installation-matrix.md) before following a subsystem-specific guide.
+**Before a kernel reboot:** run `python3 scripts/check-kernel-update.py` and `python3 scripts/repair-audio.py --check`. Review warnings before reboot. Do not copy DMA blacklist symbols from an older kernel.
 
-## Hardware and compatibility
+## Details and research
 
-| Area | Primary guide | Current scope |
-|---|---|---|
-| Keyboard / trackpad, kernel updates | [Kernel-update regression and DMA symbol workaround](kernel-update-regression-2026-10-22.md) | Kernel-specific boot workaround; [read-only pre-reboot checker](../scripts/check-kernel-update.py) |
-| Future SPI alternative | [Upstream SPI PIO patch evaluation](spi-upstream-pio-patch.md) | **Untested candidate**, not an installed replacement |
-| Camera | [Camera setup and application discovery](camera.md) | Live capture verified in mpv, other applications still unverified |
-| Audio | [Audio overview](audio.md) | Existing MacBook sound recovery; no validated universal installer |
-| CPU limiting | [CPU frequency cap](cpu-frequency-limit.md) | Confirmed initial cap; regression across updates/resume pending |
-| Battery sleep drain | [EC wakeup experiment](sleep-battery-drain.md) | Runtime-only proposal, **not yet confirmed effective** |
-| Hibernation | [Experimental hibernation preparation](hibernation.md) | Machine-specific, restore never confirmed |
+- [Installation, verification, and rollback](installation-matrix.md)
+- [Script reference and side effects](script-reference.md)
+- [SPI upstream alternative](spi-upstream-pio-patch.md) — untested on this machine
+- [Original audio channel measurements](speaker-sound-diagnosis.md), [listening experiments](continuation-checkpoint.md), [upstream comparison](audio-upstream-comparison.md)
+- [Recovered audio support files](audio-support-recovery.md) — provenance, not a fresh installer
 
-Bluetooth workaround is tracked in the [README status table](../README.md); there is not yet a validated reusable Bluetooth installer/standalone guide. Battery *reporting* inconsistencies are separate from actual energy drain and remain open.
+## Maintainers
 
-For a compact decision guide, see the [audio guide map](audio-guide-map.md).
+- [Release blockers and physical test checklist](phase4-release-safety.md)
+- [Maintenance rules and remaining work](repository-cleanup-roadmap.md)
+- [Offline CI workflow](../.github/workflows/offline-validation.yml)
 
-## Audio: choose the right document
-
-- [Audio overview](audio.md): scope and known limitations
-- [Audio recovery after a CachyOS update](audio-update-recovery.md): recovery for an **already installed** patched driver, not a fresh installer
-- [Source packaging plan](audio-packaging.md): prerequisite work before any fresh-install release
-- [D+ clarity per-user service](dplus-service.md): experimental processing, opt-in only; autostart and A/V timing unresolved
-- [Upstream profile comparison](audio-upstream-comparison.md): still-open controlled listening experiment
-- [Recovered missing installer support files](audio-support-recovery.md): historical recovery notes; not the standard repair procedure
-- [Speaker routing diagnosis](speaker-sound-diagnosis.md) and [continuation checkpoint](continuation-checkpoint.md): experimental/historical evidence; **retained**, not obsolete
-
-The [historical-document archive plan](history-archive-plan.md) identifies dated investigations to preserve and the link checks required before moving them.
-
-**Phase 3:** see the [script organization and compatibility plan](phase3-script-organization.md). No executable relocations are approved yet.
-
-For each available script and its side effects, use the [script reference](script-reference.md) before executing anything.
-
-The [Phase 3 dependency map](phase3-dependency-map.md) records which script, systemd and CI paths must remain compatible before any relocation.
-
-**Release preparation:** [Phase 4 safety gates and hardware acceptance checklist](phase4-release-safety.md) documents what must be verified before installers or releases can be considered stable.
-
-Phase 4's [installer ownership and rollback audit](phase4-installer-rollback-audit.md) records the identified CPU configuration protection gap and remaining camera/audio failure-path tests.
-
-## Maintenance and contributor references
-
-- [Repository cleanup roadmap](repository-cleanup-roadmap.md) and [Phase 1 disposition](phase1-disposition-2026-10-23.md)
-- [Phase 1 file inventory](phase1-inventory-2026-10-23.md), [source audit](phase1-source-audit-2026-10-23.md), [test coverage](phase1-test-coverage-2026-10-23.md)
-- [CI validation and limitations](phase1-validation-workflow.md) and [licensing/privacy audit](phase1-license-privacy-audit-2026-10-23.md)
-- [Offline validation workflow](../.github/workflows/offline-validation.yml): syntax and mocked unit tests, **not** physical hardware certification
-- [7.3.0 kernel regression history](kernel-update-regression-2026-10-22.md)
-
-## Documentation rules for future changes
-
-1. Preserve model, kernel version, date, real-hardware vs simulated test status, risks and rollback.
-2. Keep diagnostics separate from mutating install/repair/uninstall/experimental actions.
-3. Keep active guides current; preserve unique dated investigations rather than deleting evidence.
-4. Do not copy fixed machine identifiers, filesystem UUIDs, firmware blobs or kernel-specific DMA symbols to a different laptop without verification.
-5. Printer customization and custom keyboard shortcuts are outside the repository's agreed scope.
-
-Phase 2 initially reorganizes **navigation only**. Existing files, paths and commands remain unchanged.
+**Status language matters:** tested on this MacBook does not mean tested after every update or on another machine. Keep drivers, Limine boot settings, and normal CPU/audio configuration unchanged when editing documentation. Historical audit records remain in Git history instead of cluttering current guides.

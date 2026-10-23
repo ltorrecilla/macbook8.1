@@ -1,6 +1,6 @@
 # MacBook8,1 speaker bass and channel routing (2026-10-17)
 
-> **Historical speaker diagnosis (October 17, 2026).** Preserved for measured routing/EQ evidence, not the latest speaker-processing guidance. Consult the [audio guide map](audio-guide-map.md) and [D+ service status](dplus-service.md); the latter remains experimental due to A/V synchronization problems.
+> **Historical speaker diagnosis (October 17, 2026).** Preserved for measured routing/EQ evidence, not the latest speaker-processing guidance. Consult the [audio guide map](INDEX.md) and [D+ service status](dplus-service.md); the latter remains experimental due to A/V synchronization problems.
 
 **Status: internal speakers work, but bass is thinner than macOS; not yet solved.** Avoid changing working kernel/DKMS modules just to tune audio.
 
