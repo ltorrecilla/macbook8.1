@@ -117,5 +117,34 @@ class CpuInstallLifecycleTests(unittest.TestCase):
         self.assertFalse(self.unit.exists())
 
 
+    def test_existing_managed_install_rerun_does_not_write(self):
+        self.assertEqual(self.run_install().returncode, 0)
+        original = [(p.read_bytes(), p.stat().st_mtime_ns)
+                    for p in (self.unit, self.helper, self.config, self.marker)]
+        result = self.run_install("install")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Nothing changed", result.stdout)
+        self.assertEqual(original, [(p.read_bytes(), p.stat().st_mtime_ns)
+                                   for p in (self.unit, self.helper, self.config, self.marker)])
+
+    def test_existing_managed_different_cap_rejected(self):
+        self.assertEqual(self.run_install().returncode, 0)
+        before = self.config.read_bytes()
+        result = subprocess.run(["bash", str(self.script), "1300"], env=self.env,
+                                capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.config.read_bytes(), before)
+        self.assertIn("transactional upgrade", result.stderr)
+
+    def test_incomplete_managed_install_preserved(self):
+        self.assertEqual(self.run_install().returncode, 0)
+        self.helper.unlink()
+        result = self.run_install()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertTrue(self.unit.exists())
+        self.assertTrue(self.config.exists())
+        self.assertTrue(self.marker.exists())
+
+
 if __name__ == "__main__":
     unittest.main()
