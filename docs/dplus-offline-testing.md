@@ -143,6 +143,25 @@ Use the existing instructions to run the updated isolated diagnostic after pulli
 
 PipeWire reference: https://docs.pipewire.org/page_module_metadata.html
 
+### Stage 2 filter graph loaded but nodes not visible (2026-10-23)
+
+On the next owner run, all 12 static tests and the standalone private-protocol handshake passed. In Stage 2, the daemon log showed `loaded module libpipewire-module-filter-chain`, internal filter graph initialization, and **no metadata marshal error**, but the `pw-dump` client did not find either expected node. Raw was still the default. **Module loading does not establish registration of filter streams or functional DSP.**
+
+**New hypothesis, awaiting owner validation:** the private manager (`dplus-test-0-manager`) previously had `unrestricted` access, but the filter-chain's two streams may use the ordinary `dplus-test-0` socket, whose access was still `default`. Without a session manager, those stream clients can be suspended and fail to publish nodes. PipeWire's official filter-chain documentation describes the streams; its access documentation explains suspended clients without granted core read permission.
+
+The diagnostic now grants `unrestricted` to **both sockets of its disposable temporary PipeWire daemon only**. No user/system PipeWire config, production sockets, service, WirePlumber policy, or default audio output is changed. This test-only permission setting is **not a recommendation for a normal PipeWire installation**.
+
+If Stage 2 still fails, the harness now reports counts of private object types and any advertised private node names to distinguish empty registration from a naming mismatch. Do not attempt to resolve this by connecting test outputs to Raw or copying the generated graph into your live PipeWire configuration.
+
+From the known working checkout `/home/luis/git/macbook/macbook8.1`:
+
+```bash
+git pull --ff-only
+python3 -m unittest discover -s tests -p 'test_dplus_isolated_pipewire_smoke.py' -v
+python3 scripts/dplus-isolated-pipewire-smoke.py
+pactl get-default-sink
+```
+
 ## What is actually tested
 
 - Silence, left impulse, right impulse, quiet synthetic audio, loud synthetic audio.
