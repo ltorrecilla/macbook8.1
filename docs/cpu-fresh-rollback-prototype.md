@@ -1,3 +1,5 @@
+> **Cleanup status (2026-10-23):** The unintegrated prototype shell script and its dedicated fixture tests were removed from the active tree because the path/race safety review blocked production use. Their full source remains in Git history (PR #30). No production CPU installer depends on them.
+
 # CPU fresh-install rollback prototype
 
 This is an **unintegrated test prototype**, not a production rollback command. It is intentionally not sourced by `install-cpu-limit.sh`, not called by a service and not documented as a command for the MacBook. Its tests use temporary paths only.
