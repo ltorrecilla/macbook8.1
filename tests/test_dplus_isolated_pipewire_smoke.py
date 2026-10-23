@@ -91,6 +91,15 @@ class IsolatedPipeWireSmokeTests(unittest.TestCase):
         self.assertNotIn("libpipewire-module-filter-chain", core)
         self.assertIn("libpipewire-module-filter-chain", full)
 
+    def test_metadata_module_available_in_both_disposable_phases(self):
+        for with_filter in (False, True):
+            config = mod.config_text(include_filter=with_filter)
+            self.assertIn("libpipewire-module-protocol-native", config)
+            self.assertIn("libpipewire-module-metadata", config)
+            self.assertEqual(config.count("libpipewire-module-metadata"), 1)
+        source = SCRIPT.read_text(encoding="utf-8")
+        self.assertIn("Relevant private log messages:", source)
+
     def test_no_service_or_pulse_actions(self):
         s = SCRIPT.read_text(encoding="utf-8")
         self.assertNotIn("systemctl", s)
