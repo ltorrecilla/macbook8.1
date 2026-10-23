@@ -162,6 +162,22 @@ python3 scripts/dplus-isolated-pipewire-smoke.py
 pactl get-default-sink
 ```
 
+### M3.0 verified; M3.1 exact native port discovery (2026-10-23)
+
+Owner's isolated native 48-kHz `bq_raw` smoke test passed **both stages**, with **14/14** static tests passing and `MacBook_Speaker_Raw` still selected. The temporary test graph exposed `dplus_isolated_capture` and `dplus_isolated_output` and then shut down. This validates *node initialization*, not audio processing parity.
+
+The next safe step is to identify the precise names and directions of the test graph's ports before creating any PCM links. The smoke test now prints a **private filter-chain port inventory** when Stage 2 succeeds. This is read from the temporary instance's registry; no ports are linked, no test PCM is played, and no production server is used. Two additional offline tests cover inventory parsing (16 total).
+
+```bash
+cd /home/luis/git/macbook/macbook8.1
+git pull --ff-only
+python3 -m unittest discover -s tests -p 'test_dplus_isolated_pipewire_smoke.py' -v
+python3 scripts/dplus-isolated-pipewire-smoke.py
+pactl get-default-sink
+```
+
+Record only the port names and directions printed by the temporary server. A later **separate opt-in PCM test** will explicitly link generated playback to the native graph and the graph to capture; no hardware, ALSA, or system default connection will be permitted. We must first establish accurate port identities and then test sample alignment and rate before evaluating filter coefficients.
+
 ## What is actually tested
 
 - Silence, left impulse, right impulse, quiet synthetic audio, loud synthetic audio.
