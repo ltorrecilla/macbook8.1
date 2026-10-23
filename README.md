@@ -2,6 +2,10 @@
 
 Experimental hardware support for the 12-inch MacBook (Early 2015). This project is not yet a complete one-command hardware installer.
 
+## Find the right guide
+
+**Start with the [documentation index](docs/INDEX.md)** for keyboard/trackpad, audio, camera, CPU, battery and sleep, hibernation, experimental research, and maintainer notes. The status table below remains the authoritative record of what was actually tested on the original MacBook. No universal one-click hardware installer is validated yet.
+
 ## New investigations and maintenance plan (2026-10-23)
 
 - [Sleep battery drain and EC wakeup experiment](docs/sleep-battery-drain.md) — proposed runtime-only test of `acpi.ec_no_wakeup=1`; **not yet tested** or installed persistently. Preserve `s2idle` and the existing kernel-specific SPI/DMA workaround.
