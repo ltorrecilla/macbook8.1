@@ -37,6 +37,15 @@ context.spa-libs = {
 }
 context.modules = [
     { name = libpipewire-module-protocol-native }
+    # ONLY the test server's private manager socket has unrestricted access.
+    # No system-wide security setting or legacy permission fallback is changed.
+    { name = libpipewire-module-access
+      args = {
+        access.socket = {
+          dplus-test-0-manager = "unrestricted"
+        }
+      }
+    }
     { name = libpipewire-module-client-node }
     { name = libpipewire-module-adapter }
     { name = libpipewire-module-filter-chain
@@ -125,7 +134,9 @@ def private_phase(root, name, with_filter):
     config.mkdir(mode=0o700)
     (config / "dplus-isolated.conf").write_text(config_text(with_filter), encoding="utf-8")
     env = safe_env(directory)
-    socket_path = runtime / SOCKET
+    # pw-dump connects with the manager intention; the private
+    # CORENAME-manager socket gets explicit, socket-scoped permissions.
+    socket_path = runtime / (SOCKET + "-manager")
     logfile = directory / "pipewire.log"
     daemon = None
     last_error = "not yet connected"
@@ -135,7 +146,7 @@ def private_phase(root, name, with_filter):
                 ["pipewire", "-c", "dplus-isolated.conf"], env=env,
                 stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
                 start_new_session=True)
-            # Wait for the private socket BEFORE launching pw-dump. Otherwise
+            # Wait for the private MANAGER socket BEFORE launching pw-dump. Otherwise
             # the client can block on a missing listener and mask startup errors.
             deadline = time.monotonic() + 6
             while time.monotonic() < deadline:
