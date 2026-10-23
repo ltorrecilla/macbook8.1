@@ -37,6 +37,9 @@ context.spa-libs = {
 }
 context.modules = [
     { name = libpipewire-module-protocol-native }
+    # Metadata protocol/factory support is required for pw-dump binding.
+    # Limited to this generated disposable server configuration.
+    { name = libpipewire-module-metadata }
     # ONLY the test server's private manager socket has unrestricted access.
     # No system-wide security setting or legacy permission fallback is changed.
     { name = libpipewire-module-access
@@ -202,11 +205,17 @@ def private_phase(root, name, with_filter):
             raise RuntimeError(last_error)
         except RuntimeError as exc:
             log.flush()
-            tail = logfile.read_text(encoding="utf-8", errors="replace")[-2200:]
+            contents = logfile.read_text(encoding="utf-8", errors="replace")
+            errors = [line for line in contents.splitlines()
+                      if "[E]" in line or "filter-chain" in line.lower()
+                      or "metadata" in line.lower()]
+            diagnostic = "\n".join(errors[-14:])[-2400:]
+            tail = contents[-1800:]
             raise RuntimeError(
                 f"{name} phase failed: {exc}\n"
                 f"private socket present={socket_path.is_socket()}; "
                 f"private daemon alive={daemon is not None and daemon.poll() is None}\n"
+                f"Relevant private log messages:\n{diagnostic or '(none)'}\n"
                 f"Private daemon log tail:\n{tail or '(empty)'}") from exc
         finally:
             if daemon is not None and daemon.poll() is None:
