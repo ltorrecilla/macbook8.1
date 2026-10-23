@@ -27,4 +27,4 @@ Each subsystem guide should contain, at minimum:
 
 **Do not run all installers in sequence.** Only apply a subsystem change to address a confirmed need and follow its current dedicated guide.
 
-See [documentation index](INDEX.md), [kernel-update playbook](kernel-update-playbook.md), and [Phase 1 disposition](phase1-disposition-2026-10-23.md). No scripts were changed to create this matrix.
+See [documentation index](INDEX.md), [kernel-update playbook](kernel-update-playbook.md), and [release-safety checklist](phase4-release-safety.md).
