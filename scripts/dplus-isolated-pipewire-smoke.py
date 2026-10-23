@@ -22,7 +22,7 @@ SOCKET = "dplus-test-0"
 CAPTURE = "dplus_isolated_capture"
 PLAYBACK = "dplus_isolated_output"
 
-def config_text(include_filter=True) -> str:
+def config_text(include_filter=True, active_probe=False) -> str:
     config = """# Disposable D+ smoke test: NO hardware/session-manager modules
 context.properties = {
     core.daemon = true
@@ -89,6 +89,17 @@ context.modules = [
     }
 ]
 """
+    if active_probe:
+        if not include_filter or config.count("          node.passive = true") != 2:
+            raise ValueError("Invalid isolated active-probe configuration")
+        # This is exclusively for a new disposable server. Without a session
+        # manager or hardware target, ask the two filter streams to run.
+        config = config.replace(
+            "          node.passive = true",
+            "          node.passive = false\\n"
+            "          node.always-process = true\\n"
+            "          node.autoconnect = false"
+        )
     if include_filter:
         return config
     before, marker, _ = config.partition("    { name = libpipewire-module-filter-chain")
@@ -223,7 +234,7 @@ def client_env(daemon_env):
     env.pop("PIPEWIRE_NO_CONFIG", None)
     return env
 
-def private_phase(root, name, with_filter):
+def private_phase(root, name, with_filter, active_probe=False):
     """Probe exactly one private daemon, returning success only after a JSON reply."""
     import stat
 
@@ -232,7 +243,8 @@ def private_phase(root, name, with_filter):
     config = directory / "config"
     runtime.mkdir(parents=True, mode=0o700)
     config.mkdir(mode=0o700)
-    (config / "dplus-isolated.conf").write_text(config_text(with_filter), encoding="utf-8")
+    (config / "dplus-isolated.conf").write_text(
+        config_text(with_filter, active_probe), encoding="utf-8")
     env = safe_env(directory)
     # pw-dump connects with the manager intention; the private
     # CORENAME-manager socket gets explicit, socket-scoped permissions.
@@ -267,7 +279,7 @@ def private_phase(root, name, with_filter):
 
             # -r explicitly selects our socket, and PIPEWIRE_RUNTIME_DIR points
             # at the private location; no production server is contacted.
-            deadline = time.monotonic() + 9
+            deadline = time.monotonic() + (5 if active_probe else 9)
             while time.monotonic() < deadline:
                 if daemon.poll() is not None:
                     last_error = "private server exited with status " + str(daemon.returncode)
@@ -288,6 +300,14 @@ def private_phase(root, name, with_filter):
                         else:
                             ok, nodes = scan_objects(objects)
                             if ok:
+                                if active_probe and private_graph_summary(objects)["total_published_port_objects"] == 0:
+                                    last_error = (
+                                        "active private graph has both nodes but still zero Port objects; "
+                                        "states = " +
+                                        json.dumps(private_graph_summary(objects)["test_nodes"])[:800]
+                                    )
+                                    time.sleep(0.25)
+                                    continue
                                 if with_filter:
                                     print("Private registry structure:", flush=True)
                                     print(json.dumps(private_graph_summary(objects), indent=2),
@@ -339,7 +359,7 @@ def private_phase(root, name, with_filter):
                     daemon.wait(timeout=2)
 
 
-def run_smoke(inspect_only=False):
+def run_smoke(inspect_only=False, probe_activation=False):
     if os.geteuid() == 0:
         raise RuntimeError("Run as ordinary user, not sudo/root")
     for program in ("pipewire", "pw-dump"):
@@ -359,15 +379,23 @@ def run_smoke(inspect_only=False):
         print("PASS: isolated 48-kHz PipeWire bq_raw stereo graph initialized.", flush=True)
         print("Nodes:", CAPTURE, PLAYBACK)
         print("No speakers, ALSA, or system audio services were used.")
+        if probe_activation:
+            print("Stage 3/3: testing private stream activation (no audio).", flush=True)
+            private_phase(root, "active", with_filter=True, active_probe=True)
+            print("PASS: isolated active graph published Port objects.", flush=True)
         return 0
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--show-config", action="store_true",
                         help="Print isolated configuration without launching a process")
+    parser.add_argument("--probe-activation", action="store_true",
+                        help="Also request processing in a third, private-only test server; no audio")
     args = parser.parse_args(argv)
+    if args.show_config and args.probe_activation:
+        parser.error("Choose --show-config or --probe-activation, not both")
     try:
-        return run_smoke(args.show_config)
+        return run_smoke(args.show_config, args.probe_activation)
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
         print("FAIL:", exc, file=sys.stderr)
         return 1
