@@ -10,7 +10,7 @@ For the **12-inch Early 2015 MacBook on CachyOS**. These are hardware-specific r
 | Camera | [FaceTime HD camera](camera.md) |
 | CPU limiting | [CPU cap](cpu-frequency-limit.md) |
 | Audio | [Recovery for an existing driver](audio-update-recovery.md), [future driver packaging](audio-packaging.md) |
-| Sound processing | [Experimental D+ service](dplus-service.md), [offline D+ v4 reference tests](dplus-offline-testing.md) |
+| Sound processing | [D+ status, verified evidence, roadmap and rollback](dplus-service.md); [offline/isolated technical evidence](dplus-offline-testing.md) |
 | Battery and sleep | [Unverified EC-wakeup experiment](sleep-battery-drain.md) |
 | Hibernation | [Experimental, machine-specific preparation](hibernation.md) |
 
