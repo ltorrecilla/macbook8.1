@@ -124,6 +124,36 @@ def inventory_summary(objects):
             "advertised_node_names": sorted(names)[:15]}
 
 
+def private_filter_ports(objects):
+    """Inventory only ports belonging to the disposable test filter streams."""
+    node_names = {}
+    for obj in objects:
+        if not isinstance(obj, dict) or obj.get("type") != "PipeWire:Interface:Node":
+            continue
+        info = obj.get("info")
+        props = info.get("props") if isinstance(info, dict) else None
+        if isinstance(props, dict) and props.get("node.name") in (CAPTURE, PLAYBACK):
+            node_names[str(obj.get("id"))] = props["node.name"]
+    ports = []
+    for obj in objects:
+        if not isinstance(obj, dict) or obj.get("type") != "PipeWire:Interface:Port":
+            continue
+        info = obj.get("info")
+        props = info.get("props") if isinstance(info, dict) else None
+        if not isinstance(props, dict):
+            continue
+        owner = node_names.get(str(props.get("node.id")))
+        if owner is None:
+            continue
+        ports.append({
+            "node": owner,
+            "port": str(props.get("port.name", "?")),
+            "direction": str(info.get("direction", props.get("port.direction", "?"))),
+            "channel": str(props.get("audio.channel", "?")),
+        })
+    return sorted(ports, key=lambda x: (x["node"], x["port"]))
+
+
 def safe_env(root):
     env = os.environ.copy()
     env.update({
@@ -214,6 +244,16 @@ def private_phase(root, name, with_filter):
                         else:
                             ok, nodes = scan_objects(objects)
                             if ok:
+                                if with_filter:
+                                    ports = private_filter_ports(objects)
+                                    print("Private filter-chain port inventory:", flush=True)
+                                    if ports:
+                                        for port in ports:
+                                            print("  " + port["node"] + " : " + port["port"]
+                                                  + " [" + port["direction"] + ", "
+                                                  + port["channel"] + "]", flush=True)
+                                    else:
+                                        print("  No port objects published in this snapshot.", flush=True)
                                 return True
                             last_error = (
                                 "connected but expected filter nodes absent: "
