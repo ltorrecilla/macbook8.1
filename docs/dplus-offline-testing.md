@@ -80,6 +80,25 @@ Early offline analysis of the approved profile showed unchanged coefficients shi
 
 Offline unit tests now include four additional rate-analysis tests (12 tests total). The historical offline FFmpeg-versus-Python parity result remains valid **at 44100 Hz only**.
 
+## Milestone 3.0 — Native module initialization in a separate PipeWire server
+
+The MacBook preflight confirmed `pw-cat`, `pw-link`, `pw-cli`, `pw-dump`, and the installed native filter-chain module. The actual checkout is `/home/luis/git/macbook/macbook8.1` (not the older path).
+
+First test the runtime availability of PipeWire's builtin `bq_raw` with an **independent disposable PipeWire daemon**. This is a minimal *unity* stereo test; it does not use the confidential D+ profile or exercise speaker sound quality. It creates a new private socket/config under a temporary directory, loads only protocol/client/adapter and the filter-chain module, observes the two test nodes through that socket, then terminates only its own child process and removes its temporary files. It does not start WirePlumber, PipeWire-Pulse, ALSA monitoring or a hardware sink, and never issues a systemd command.
+
+From a current checkout, as your ordinary user:
+
+```bash
+python3 -m unittest discover -s tests -p 'test_dplus_isolated_pipewire_smoke.py' -v
+python3 scripts/dplus-isolated-pipewire-smoke.py --show-config
+python3 scripts/dplus-isolated-pipewire-smoke.py
+```
+
+If the last command fails, preserve its printed **private daemon log** and stop: do not work around it by restarting the production PipeWire service, enabling D+, or loading the graph into the live server. `--show-config` is dry-run only. This stage validates **module initialization and node enumeration**, not actual signal flow or DSP parity. Run the subsequent audio-capture test only after this passes and its routing has been reviewed.
+
+Continue verifying `pactl get-default-sink` remains `MacBook_Speaker_Raw`; keep the original D+ user service disabled. The disconnected smoke test's unity coefficients are **not** the real D+ v4 EQ and no limiter or channel mapping is included.
+
+
 ## What is actually tested
 
 - Silence, left impulse, right impulse, quiet synthetic audio, loud synthetic audio.
