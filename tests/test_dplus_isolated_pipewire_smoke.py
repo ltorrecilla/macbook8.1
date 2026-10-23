@@ -174,6 +174,29 @@ class IsolatedPipeWireSmokeTests(unittest.TestCase):
         self.assertEqual(report["test_nodes"][0]["n_output_ports"], "not reported")
         self.assertEqual(report["published_port_sample"], [])
 
+    def test_active_probe_remains_private_and_has_no_hardware(self):
+        default = mod.config_text()
+        active = mod.config_text(active_probe=True)
+        self.assertEqual(default.count("node.passive = true"), 2)
+        self.assertEqual(active.count("node.passive = false"), 2)
+        self.assertEqual(active.count("node.always-process = true"), 2)
+        self.assertEqual(active.count("node.autoconnect = false"), 2)
+        self.assertNotIn("node.always-process", default)
+        for forbidden in ("MacBook_Speaker_Raw", "alsa_output", "libpipewire-module-alsa",
+                          "target.object", "module-loopback", "wireplumber"):
+            self.assertNotIn(forbidden, active.lower() if forbidden.islower() else active)
+
+    def test_active_probe_requires_filter_graph(self):
+        with self.assertRaises(ValueError):
+            mod.config_text(include_filter=False, active_probe=True)
+
+    def test_active_probe_uses_separate_disposable_phase(self):
+        source = SCRIPT.read_text(encoding="utf-8")
+        self.assertIn('private_phase(root, "active", with_filter=True, active_probe=True)', source)
+        self.assertIn('parser.add_argument("--probe-activation"', source)
+        self.assertIn('if args.show_config and args.probe_activation:', source)
+        self.assertIn('total_published_port_objects', source)
+
     def test_no_service_or_pulse_actions(self):
         s = SCRIPT.read_text(encoding="utf-8")
         self.assertNotIn("systemctl", s)
