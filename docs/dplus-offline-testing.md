@@ -115,6 +115,22 @@ pactl get-default-sink
 
 **Interpretation:** If Stage 1 fails, work on the private socket/client configuration; if Stage 1 passes and Stage 2 fails, focus on filter module initialization and node publication. Do not increase the timeout indefinitely, switch to the production server, install a filter graph into the user's config, or restart audio services to make this smoke test pass.
 
+### Root cause narrowed: private server did not authorize client (2026-10-23)
+
+The owner ran the two-stage diagnostic. All nine static tests passed. **Stage 1** created a private socket and the server accepted `pw-dump` connections, but the client timed out three times. There were no filter modules in this phase, so the timeout is independent of `bq_raw`. The default stayed `MacBook_Speaker_Raw`.
+
+PipeWire documents that clients may be **accepted but suspended without read permission on the core**. The hand-written standalone daemon omitted both an access module and a session manager. This is the likely underlying cause of the timeout (not yet hardware-verified). A `pw-dump` client requests **manager** intention and tries the `dplus-test-0-manager` socket.
+
+The revised disposable config loads `libpipewire-module-access` with an explicit `access.socket` mapping that grants `unrestricted` **only** on the temporary **`dplus-test-0-manager`** socket. The diagnostic now waits for that socket. The base socket receives no such grant. The configuration is generated inside a private temporary directory, never installed globally, and cleaned up after the test. We did **not** enable deprecated `access.legacy`, bypass system-wide PipeWire security, or start WirePlumber.
+
+After `git pull --ff-only`, run the eleven static tests and the same isolated smoke script. Stage 1 must pass before Stage 2 is meaningful. If Stage 1 still times out, preserve the full output instead of changing the host's security, user services, system clock or speaker routing.
+
+```bash
+python3 -m unittest discover -s tests -p 'test_dplus_isolated_pipewire_smoke.py' -v
+python3 scripts/dplus-isolated-pipewire-smoke.py
+pactl get-default-sink
+```
+
 ## What is actually tested
 
 - Silence, left impulse, right impulse, quiet synthetic audio, loud synthetic audio.
