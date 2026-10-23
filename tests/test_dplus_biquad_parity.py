@@ -69,6 +69,31 @@ class BiquadParityTests(unittest.TestCase):
         for name in ('silence','left_impulse','right_impulse','stereo_tones'):
             self.assertEqual(len(mod.generate_fixture(name)), mod.FRAMES*8)
 
+    def test_bilinear_identity_at_matching_rates(self):
+        coeffs = self.read(fixture_profile())[0]
+        new = mod.bilinear_rate_convert(coeffs, 44100, 44100)
+        for k in mod.COEF_NAMES:
+            self.assertAlmostEqual(coeffs[k], new[k], places=12)
+
+    def test_bilinear_stable_candidate(self):
+        row = {'b0': 0.2, 'b1': 0.0, 'b2': 0.0,
+               'a0': 1., 'a1': -0.7, 'a2': 0.1}
+        converted = mod.bilinear_rate_convert(row)
+        self.assertEqual(converted['a0'], 1.)
+        self.assertTrue(all(mod.math.isfinite(v) for v in converted.values()))
+
+    def test_frequency_response_identity(self):
+        row = self.read(fixture_profile())
+        for hz in [50, 1000, 10000]:
+            self.assertAlmostEqual(mod.cascade_response_db(row, 44100, hz), 0, places=12)
+
+    def test_audit_identity_has_no_difference(self):
+        row = self.read(fixture_profile())
+        report = mod.rate_audit(row)
+        for item in report['sampled_max_abs_difference_db'].values():
+            self.assertLess(abs(item['unchanged_44k_coeffs_at_48k']['delta_db']), 1e-7)
+            self.assertLess(abs(item['bilinear_remap_48k']['delta_db']), 1e-7)
+
     def test_do_not_overwrite_output_directory(self):
         with tempfile.TemporaryDirectory() as d:
             p = Path(d) / 'reference.json'
