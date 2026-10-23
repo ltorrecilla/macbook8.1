@@ -96,8 +96,8 @@ context.modules = [
         # manager or hardware target, ask the two filter streams to run.
         config = config.replace(
             "          node.passive = true",
-            "          node.passive = false\\n"
-            "          node.always-process = true\\n"
+            "          node.passive = false\n"
+            "          node.always-process = true\n"
             "          node.autoconnect = false"
         )
     if include_filter:
