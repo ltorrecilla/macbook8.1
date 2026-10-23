@@ -56,6 +56,20 @@ if [[ -f "$unit" && -f "$helper" ]] &&
   legacy_owned=yes
 fi
 cpu_cap_config_preflight "$config" "$marker" "$max_khz" "$legacy_owned" || fail 'Refusing to alter CPU config'
+# Existing installations are left untouched until a separately tested
+# transactional upgrade path is available. Incomplete installations stop.
+if [[ -e "$unit" || -e "$helper" || -e "$config" || -e "$marker" ||
+      -L "$unit" || -L "$helper" || -L "$config" || -L "$marker" ]]; then
+  [[ -f "$unit" && ! -L "$unit" && -f "$helper" && ! -L "$helper" &&
+     -f "$config" && "$legacy_owned" == yes ]] ||
+    fail 'Incomplete or unrecognized CPU cap installation; preserving existing files'
+  current_cap="$(cat -- "$config")" || fail 'Cannot read existing CPU cap'
+  [[ "$current_cap" == "$max_khz" ]] ||
+    fail 'Changing an installed CPU cap requires a future transactional upgrade; existing settings preserved'
+  printf 'Existing CPU cap configuration matches %s MHz. Nothing changed.\\n' "$max_mhz"
+  printf 'Check service state with: bash scripts/check-cpu-limit.sh\\n'
+  exit 0
+fi
 for other in cpupower.service tuned.service auto-cpufreq.service; do
   if systemctl is-active --quiet "$other" 2>/dev/null; then
     printf 'WARNING: %s is active and may override frequency limits.\n' "$other" >&2
