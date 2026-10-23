@@ -4,7 +4,13 @@ Updated **2026-10-22** (7.3.0-2 update regression added). Previously updated 202
 
 This page supplements the [continuation checkpoint](continuation-checkpoint.md). For update recovery and the latest EQ handoff, use this page when older wording differs.
 
-## New 7.3.0-2 regression (2026-10-22)\n\nThe owner confirmed keyboard and trackpad recovered after correcting a **different** built-in DMA initcall symbol; see [kernel-update regression](kernel-update-regression-2026-10-22.md). Audio was still silent/missing Raw after reboot. Before repair, `--check` returned `NEEDS BUILD: 7.3.0-2-cachyos`; the loaded module lookup resolved to the stock Cirrus codec module.\n\nThe first `--repair` halted before DKMS because it probed `linux-7.3.0.tar.xz` (HTTP 404); for initial `x.y.0` stable releases kernel.org uses `linux-x.y.tar.xz`. The wrapper now strips only the final `.0` from the upstream source version; it does **not** change the installed kernel release, DKMS target, header selection or compiler. The underlying registered Cirrus build script already had both filename attempts. The owner later reported both kernels passing the on-disk verification; ALSA detected CS4208 Speaker (PCH device 2), PipeWire showed MacBook_Speaker_Raw as default, and actual speaker playback was confirmed good. D+ service autostart and another update cycle are still untested.\n\n## Three different update failures
+## New 7.3.0-2 regression (2026-10-22)
+
+The owner confirmed keyboard and trackpad recovered after correcting a **different** built-in DMA initcall symbol; see [kernel-update regression](kernel-update-regression-2026-10-22.md). Audio was still silent/missing Raw after reboot. Before repair, `--check` returned `NEEDS BUILD: 7.3.0-2-cachyos`; the loaded module lookup resolved to the stock Cirrus codec module.
+
+The first `--repair` halted before DKMS because it probed `linux-7.3.0.tar.xz` (HTTP 404); for initial `x.y.0` stable releases kernel.org uses `linux-x.y.tar.xz`. The wrapper now strips only the final `.0` from the upstream source version; it does **not** change the installed kernel release, DKMS target, header selection or compiler. The underlying registered Cirrus build script already had both filename attempts. The owner later reported both kernels passing the on-disk verification; ALSA detected CS4208 Speaker (PCH device 2), PipeWire showed MacBook_Speaker_Raw as default, and actual speaker playback was confirmed good. D+ service autostart and another update cycle are still untested.
+
+## Three different update failures
 
 | Evidence from the owner's logs | Conclusion | Reported recovery |
 |---|---|---|
