@@ -178,6 +178,24 @@ pactl get-default-sink
 
 Record only the port names and directions printed by the temporary server. A later **separate opt-in PCM test** will explicitly link generated playback to the native graph and the graph to capture; no hardware, ALSA, or system default connection will be permitted. We must first establish accurate port identities and then test sample alignment and rate before evaluating filter coefficients.
 
+### M3.1 isolated node inventory: 16/16 tests pass, port mapping unresolved
+
+On 2026-10-23 the owner fast-forwarded to `85d63f9`, ran **16/16 static smoke tests successfully**, and again passed both stages of the disposable 48-kHz native PipeWire filter graph. However the added port display reported `No port objects published in this snapshot.` `MacBook_Speaker_Raw` remained the normal default. This result **does not establish that the two filter streams are able to pass PCM yet**.
+
+The previous port display was filtered to ports with a `node.id` matching the two test nodes. It cannot distinguish **zero registered ports** from **registered ports with missing/different associations**. PipeWire represents Node and Port as separate objects; port registration/state may depend on how streams are connected. Source: https://docs.pipewire.org/page_overview.html and https://docs.pipewire.org/devel/page_running.html.
+
+To avoid guessing connections, the isolated smoke script now prints a bounded, private-only registry report including the test node IDs/states, reported `n_input_ports`/`n_output_ports`, a count of **all** Port objects, a small sample of their `node.id`/direction/channel keys, and a separate count of ports matched to the filter streams. It still generates **no sound and no links**, starts and stops only disposable child daemons, and never touches host PipeWire or the Raw output.
+
+Once the report establishes whether ports exist or must be activated, design a **separate opt-in, private-socket-only** PCM round-trip. Do not connect anything to Raw or enable the old D+ user service for this investigation.
+
+```bash
+cd /home/luis/git/macbook/macbook8.1
+git pull --ff-only
+python3 -m unittest discover -s tests -p 'test_dplus_isolated_pipewire_smoke.py' -v
+python3 scripts/dplus-isolated-pipewire-smoke.py
+pactl get-default-sink
+```
+
 ## What is actually tested
 
 - Silence, left impulse, right impulse, quiet synthetic audio, loud synthetic audio.
