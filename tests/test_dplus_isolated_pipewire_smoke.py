@@ -148,6 +148,32 @@ class IsolatedPipeWireSmokeTests(unittest.TestCase):
                    {"type": "PipeWire:Interface:Port", "info": None}]
         self.assertEqual(mod.private_filter_ports(entries), [])
 
+    def test_private_summary_distinguishes_unmatched_from_no_ports(self):
+        objects = [
+            {"id": 20, "type": "PipeWire:Interface:Node",
+             "info": {"state": "idle", "n_input_ports": 2, "n_output_ports": 0,
+                      "props": {"node.name": mod.CAPTURE}}},
+            {"id": 30, "type": "PipeWire:Interface:Port",
+             "info": {"direction": "input",
+                      "props": {"port.name": "input_FL", "node.id": 999}}},
+        ]
+        report = mod.private_graph_summary(objects)
+        self.assertEqual(report["total_published_port_objects"], 1)
+        self.assertEqual(report["matched_filter_port_count"], 0)
+        self.assertEqual(report["test_nodes"][0]["n_input_ports"], 2)
+        self.assertEqual(report["test_nodes"][0]["state"], "idle")
+
+    def test_private_summary_without_ports_and_unknown_info(self):
+        objects = [
+            {"id": 1, "type": "PipeWire:Interface:Node",
+             "info": {"props": {"node.name": mod.PLAYBACK}}},
+            {"id": 3, "type": "PipeWire:Interface:Metadata", "info": None}
+        ]
+        report = mod.private_graph_summary(objects)
+        self.assertEqual(report["total_published_port_objects"], 0)
+        self.assertEqual(report["test_nodes"][0]["n_output_ports"], "not reported")
+        self.assertEqual(report["published_port_sample"], [])
+
     def test_no_service_or_pulse_actions(self):
         s = SCRIPT.read_text(encoding="utf-8")
         self.assertNotIn("systemctl", s)
