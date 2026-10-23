@@ -101,6 +101,10 @@ class IsolatedPipeWireSmokeTests(unittest.TestCase):
     def test_empty_inventory_distinct_from_missing_expected_nodes(self):
         self.assertEqual(mod.inventory_summary([]),
                          {"object_types": {}, "advertised_node_names": []})
+        self.assertEqual(mod.inventory_summary([
+            {"type": "PipeWire:Interface:Metadata", "info": None},
+            {"type": "PipeWire:Interface:Core"}
+        ])["advertised_node_names"], [])
 
     def test_both_private_phases_load_access_module(self):
         core = mod.config_text(include_filter=False)
