@@ -22,8 +22,8 @@ SOCKET = "dplus-test-0"
 CAPTURE = "dplus_isolated_capture"
 PLAYBACK = "dplus_isolated_output"
 
-def config_text() -> str:
-    return """# Disposable D+ smoke test: NO hardware/session-manager modules
+def config_text(include_filter=True) -> str:
+    config = """# Disposable D+ smoke test: NO hardware/session-manager modules
 context.properties = {
     core.daemon = true
     core.name = dplus-test-0
@@ -75,6 +75,13 @@ context.modules = [
     }
 ]
 """
+    if include_filter:
+        return config
+    before, marker, _ = config.partition("    { name = libpipewire-module-filter-chain")
+    if not marker:
+        raise RuntimeError("Private graph configuration unexpectedly missing")
+    return before + "]\n"
+
 
 def scan_objects(objects):
     nodes = {o.get("info", {}).get("props", {}).get("node.name") for o in objects
@@ -92,14 +99,113 @@ def safe_env(root):
         "PIPEWIRE_DAEMON": "true",
         "XDG_CONFIG_HOME": str(root / "config"),
     })
+    # Exclude inherited client/config overrides that could change the private test.
+    for key in ("PIPEWIRE_NO_CONFIG", "PIPEWIRE_CONFIG_NAME", "PIPEWIRE_CONFIG_PREFIX"):
+        env.pop(key, None)
+    env["PIPEWIRE_LOG_SYSTEMD"] = "false"
+    env["PIPEWIRE_DEBUG"] = "3"
     return env
 
 def client_env(daemon_env):
     env = daemon_env.copy()
     for key in ("PIPEWIRE_DAEMON", "PIPEWIRE_CORE", "PIPEWIRE_CONFIG_DIR"):
         env.pop(key, None)
-    env["PIPEWIRE_NO_CONFIG"] = "true"
+    # Keep the normal packaged client.conf so protocol-native can initialize.
+    env.pop("PIPEWIRE_NO_CONFIG", None)
     return env
+
+def private_phase(root, name, with_filter):
+    """Probe exactly one private daemon, returning success only after a JSON reply."""
+    import stat
+
+    directory = root / name
+    runtime = directory / "runtime"
+    config = directory / "config"
+    runtime.mkdir(parents=True, mode=0o700)
+    config.mkdir(mode=0o700)
+    (config / "dplus-isolated.conf").write_text(config_text(with_filter), encoding="utf-8")
+    env = safe_env(directory)
+    socket_path = runtime / SOCKET
+    logfile = directory / "pipewire.log"
+    daemon = None
+    last_error = "not yet connected"
+    with logfile.open("wb") as log:
+        try:
+            daemon = subprocess.Popen(
+                ["pipewire", "-c", "dplus-isolated.conf"], env=env,
+                stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
+                start_new_session=True)
+            # Wait for the private socket BEFORE launching pw-dump. Otherwise
+            # the client can block on a missing listener and mask startup errors.
+            deadline = time.monotonic() + 6
+            while time.monotonic() < deadline:
+                if daemon.poll() is not None:
+                    last_error = "private server exited with status " + str(daemon.returncode)
+                    break
+                try:
+                    if stat.S_ISSOCK(socket_path.stat().st_mode):
+                        break
+                except FileNotFoundError:
+                    pass
+                time.sleep(0.15)
+            else:
+                last_error = "private socket never appeared"
+
+            if not socket_path.is_socket():
+                raise RuntimeError(last_error)
+
+            # -r explicitly selects our socket, and PIPEWIRE_RUNTIME_DIR points
+            # at the private location; no production server is contacted.
+            deadline = time.monotonic() + 9
+            while time.monotonic() < deadline:
+                if daemon.poll() is not None:
+                    last_error = "private server exited with status " + str(daemon.returncode)
+                    break
+                try:
+                    probe = subprocess.run(
+                        ["pw-dump", "--remote=" + SOCKET, "--no-colors"],
+                        env=client_env(env), capture_output=True,
+                        text=True, timeout=4, check=False)
+                    if probe.returncode:
+                        last_error = "client exit " + str(probe.returncode) + ": " + probe.stderr[-400:]
+                    else:
+                        objects = json.loads(probe.stdout)
+                        if not isinstance(objects, list):
+                            last_error = "client returned non-list JSON"
+                        elif not with_filter:
+                            return True
+                        else:
+                            ok, nodes = scan_objects(objects)
+                            if ok:
+                                return True
+                            last_error = "connected, but filter nodes absent: " + repr(
+                                sorted(str(n) for n in nodes))[:300]
+                except subprocess.TimeoutExpired as exc:
+                    stderr = exc.stderr or b""
+                    if isinstance(stderr, bytes):
+                        stderr = stderr.decode("utf-8", "replace")
+                    last_error = "private client timed out: " + str(stderr)[-300:]
+                except json.JSONDecodeError as exc:
+                    last_error = "unreadable private client JSON: " + str(exc)
+                time.sleep(0.25)
+            raise RuntimeError(last_error)
+        except RuntimeError as exc:
+            log.flush()
+            tail = logfile.read_text(encoding="utf-8", errors="replace")[-2200:]
+            raise RuntimeError(
+                f"{name} phase failed: {exc}\n"
+                f"private socket present={socket_path.is_socket()}; "
+                f"private daemon alive={daemon is not None and daemon.poll() is None}\n"
+                f"Private daemon log tail:\n{tail or '(empty)'}") from exc
+        finally:
+            if daemon is not None and daemon.poll() is None:
+                try:
+                    daemon.send_signal(signal.SIGTERM)
+                    daemon.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    daemon.kill()
+                    daemon.wait(timeout=2)
+
 
 def run_smoke(inspect_only=False):
     if os.geteuid() == 0:
@@ -107,61 +213,21 @@ def run_smoke(inspect_only=False):
     for program in ("pipewire", "pw-dump"):
         if not shutil.which(program):
             raise RuntimeError("Missing executable: " + program)
+    if inspect_only:
+        print("No PipeWire process started. Generated configuration:")
+        print(config_text())
+        return 0
     with tempfile.TemporaryDirectory(prefix="dplus-pw-isolated-") as folder:
         root = Path(folder)
-        runtime, config = root / "runtime", root / "config"
-        runtime.mkdir(mode=0o700)
-        config.mkdir(mode=0o700)
-        (config / "dplus-isolated.conf").write_text(config_text(), encoding="utf-8")
-        if inspect_only:
-            print("No PipeWire process started. Generated configuration:")
-            print(config_text())
-            return 0
-        env = safe_env(root)
-        logfile = root / "pipewire.log"
-        with logfile.open("wb") as log:
-            daemon = None
-            try:
-                daemon = subprocess.Popen(["pipewire", "-c", "dplus-isolated.conf"],
-                                          env=env, stdin=subprocess.DEVNULL,
-                                          stdout=log, stderr=subprocess.STDOUT,
-                                          start_new_session=True)
-                deadline = time.monotonic() + 8
-                last_error = ""
-                while time.monotonic() < deadline:
-                    if daemon.poll() is not None:
-                        break
-                    try:
-                        check = subprocess.run(["pw-dump"], env=client_env(env),
-                                               stdout=subprocess.PIPE,
-                                               stderr=subprocess.PIPE,
-                                               text=True, timeout=2, check=False)
-                        if check.returncode == 0:
-                            ok, nodes = scan_objects(json.loads(check.stdout))
-                            if ok:
-                                print("PASS: isolated 48-kHz PipeWire bq_raw stereo graph initialized.")
-                                print("Nodes:", CAPTURE, PLAYBACK)
-                                print("Private socket:", runtime / SOCKET)
-                                print("No speaker, ALSA, PipeWire-Pulse or service changes.")
-                                return 0
-                            last_error = "Expected nodes missing; found " + repr(sorted(str(n) for n in nodes))
-                        else:
-                            last_error = check.stderr.strip()[-350:]
-                    except (json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
-                        last_error = str(exc)
-                    time.sleep(0.25)
-                log.flush()
-                tail = logfile.read_text(encoding="utf-8", errors="replace")[-1800:]
-                raise RuntimeError("Isolated graph unavailable: " + last_error
-                                   + "\nPrivate daemon log:\n" + tail)
-            finally:
-                if daemon is not None and daemon.poll() is None:
-                    try:
-                        daemon.send_signal(signal.SIGTERM)
-                        daemon.wait(timeout=3)
-                    except subprocess.TimeoutExpired:
-                        daemon.kill()
-                        daemon.wait(timeout=2)
+        print("Stage 1/2: testing the private native-protocol socket (no filters).", flush=True)
+        private_phase(root, "core", with_filter=False)
+        print("PASS: private PipeWire server and client handshake.", flush=True)
+        print("Stage 2/2: checking private bq_raw filter-chain nodes.", flush=True)
+        private_phase(root, "filter", with_filter=True)
+        print("PASS: isolated 48-kHz PipeWire bq_raw stereo graph initialized.", flush=True)
+        print("Nodes:", CAPTURE, PLAYBACK)
+        print("No speakers, ALSA, or system audio services were used.")
+        return 0
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
