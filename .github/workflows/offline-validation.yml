@@ -33,3 +33,5 @@ jobs:
           done
       - name: Run isolated unit tests
         run: python3 -m unittest discover -s tests -v
+      - name: Check internal documentation links
+        run: python3 scripts/check-doc-links.py
