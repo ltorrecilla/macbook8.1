@@ -1,4 +1,6 @@
-# D+ Clarity v4 — offline reference (Milestone 2.2)
+# D+ Clarity v4 — offline reference and isolated diagnostic archive
+
+**HISTORICAL RESEARCH — not the next development task.** The isolated PipeWire smoke harness reached two visible nodes but still showed no published Port objects after an opt-in activation attempt (2026-10-23). The [D+ plan and current task list](dplus-service.md) supersede requests to keep rerunning this harness.
 
 **Offline reference generation only, NOT an installer, live processor or speaker safety test.** It does not contact PipeWire/ALSA, run systemd, change outputs or play audio.
 
