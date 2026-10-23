@@ -111,7 +111,10 @@ def inventory_summary(objects):
     for obj in objects:
         if not isinstance(obj, dict):
             continue
-        props = obj.get("info", {}).get("props", {})
+        info = obj.get("info")
+        if not isinstance(info, dict):
+            continue
+        props = info.get("props")
         if not isinstance(props, dict):
             continue
         name = props.get("node.name")
