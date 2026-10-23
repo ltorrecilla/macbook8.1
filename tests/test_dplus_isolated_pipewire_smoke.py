@@ -74,14 +74,33 @@ class IsolatedPipeWireSmokeTests(unittest.TestCase):
         self.assertIn('private_phase(root, "core", with_filter=False)', source)
         self.assertIn('private_phase(root, "filter", with_filter=True)', source)
 
-    def test_private_manager_socket_only_gets_access(self):
+    def test_only_private_test_sockets_get_access(self):
         config = mod.config_text()
         self.assertIn("libpipewire-module-access", config)
         self.assertIn('dplus-test-0-manager = "unrestricted"', config)
+        self.assertIn('dplus-test-0 = "unrestricted"', config)
         self.assertNotIn("access.legacy", config)
-        self.assertNotIn('dplus-test-0 = "unrestricted"', config)
+        self.assertNotIn('pipewire-0 = "unrestricted"', config)
+        self.assertNotIn('pipewire-0-manager = "unrestricted"', config)
         self.assertIn('socket_path = runtime / (SOCKET + "-manager")',
                       SCRIPT.read_text(encoding="utf-8"))
+
+    def test_object_summary_reports_types_and_names(self):
+        objects = [
+            {"type": "PipeWire:Interface:Node",
+             "info": {"props": {"node.name": mod.CAPTURE}}},
+            {"type": "PipeWire:Interface:Module", "info": {"props": {}}},
+            {"type": "PipeWire:Interface:Node",
+             "info": {"props": {"node.name": mod.PLAYBACK}}},
+        ]
+        summary = mod.inventory_summary(objects)
+        self.assertEqual(summary["object_types"]["PipeWire:Interface:Node"], 2)
+        self.assertEqual(summary["object_types"]["PipeWire:Interface:Module"], 1)
+        self.assertEqual(set(summary["advertised_node_names"]), {mod.CAPTURE, mod.PLAYBACK})
+
+    def test_empty_inventory_distinct_from_missing_expected_nodes(self):
+        self.assertEqual(mod.inventory_summary([]),
+                         {"object_types": {}, "advertised_node_names": []})
 
     def test_both_private_phases_load_access_module(self):
         core = mod.config_text(include_filter=False)
