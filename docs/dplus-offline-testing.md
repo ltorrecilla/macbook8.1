@@ -62,6 +62,24 @@ systemctl --user is-active macbook81-dplus.service
 
 The next *implementation* must either ensure the actual biquad processing graph is fixed at 44.1 kHz with verified resampling boundaries, or generate the correctly transformed coefficients for the verified rate. Neither approach is assumed solved. Do not set `clock.force-rate`, change the global PipeWire clock, load the graph, or enable the old D+ service as part of this check.
 
+## 48-kHz response audit — confirmed graph rate on original MacBook
+
+On 2026-10-23 the owner reported PipeWire metadata `clock.rate=48000`, `clock.allowed-rates=[ 48000 ]`, core default 48000/quantum 1024. The physical `MacBook_Speaker_Raw` is 44100 Hz. The old D+ service remains disabled/inactive and Raw remains default. **Do not force the PipeWire graph to 44100 Hz or change system-wide audio timing to test EQ.**
+
+Run the offline frequency-response calculation with the same private profile:
+
+```bash
+python3 scripts/dplus-biquad-parity.py \
+  --profile "$HOME/Downloads/dplus-v4-reference-profile.json" \
+  --rate-audit
+```
+
+This prints JSON to the terminal without generating a graph, touching settings, or using a sound device. It compares (a) applying unchanged 44100-Hz coefficients at the real 48000-Hz graph rate, and (b) a **candidate** bilinear-substitution coefficient mapping to 48000 Hz. It reports sampled maximum and specific-frequency response differences relative to the exact original 44100-Hz cascade. The fixed 44.1-kHz review-only graph is **not** suitable for the 48-kHz graph.
+
+Early offline analysis of the approved profile showed unchanged coefficients shifted about -2.51 dB at 100 Hz and -2.97 dB at 18 kHz. The bilinear candidate reduces low-frequency drift but still shifts about -2.13 dB at 18 kHz. Therefore **neither conversion is approved as D+ equivalent**, and the audit does not export deployable 48-kHz coefficients. A more accurate response fit, or an isolated true 44.1-kHz DSP/resampling design, must be measured before any live PipeWire graph. Also evaluate the separate +1 dB stage, limiter and full-chain response.
+
+Offline unit tests now include four additional rate-analysis tests (12 tests total). The historical offline FFmpeg-versus-Python parity result remains valid **at 44100 Hz only**.
+
 ## What is actually tested
 
 - Silence, left impulse, right impulse, quiet synthetic audio, loud synthetic audio.
