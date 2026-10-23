@@ -38,6 +38,8 @@ The [historical-document archive plan](history-archive-plan.md) identifies dated
 
 **Phase 3:** see the [script organization and compatibility plan](phase3-script-organization.md). No executable relocations are approved yet.
 
+For each available script and its side effects, use the [script reference](script-reference.md) before executing anything.
+
 ## Maintenance and contributor references
 
 - [Repository cleanup roadmap](repository-cleanup-roadmap.md) and [Phase 1 disposition](phase1-disposition-2026-10-23.md)
