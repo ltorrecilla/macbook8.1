@@ -131,6 +131,18 @@ python3 scripts/dplus-isolated-pipewire-smoke.py
 pactl get-default-sink
 ```
 
+### Metadata-protocol failure isolated in Stage 2 (2026-10-23)
+
+The owner verified **11/11** smoke static tests and the private socket/client handshake (Stage 1). Stage 2 could connect but `pw-dump` returned no filter nodes. Its private daemon log contained `no marshal for type PipeWire:Interface:Metadata/3` and `can't create metadata resource: Protocol error`. Raw remained the normal system default.
+
+PipeWire's metadata module documentation says the Metadata interface requires `libpipewire-module-metadata` in both server and client contexts. The **disposable server** previously omitted that module; the diagnostic now loads it alongside the native protocol in **both private phases**. Only its private manager socket continues to receive unrestricted test access. The script now surfaces matching error/metadata/filter log entries even when they fall outside the latest log tail.
+
+**Root-cause hypothesis, not yet proved by a successful rerun:** missing server-side Metadata protocol support prevented `pw-dump` from inspecting the filter graph. If Stage 2 still fails, investigate its reported module/filter initialization errors; do not treat a completed manager handshake as proof that the actual `bq_raw` nodes exist.
+
+Use the existing instructions to run the updated isolated diagnostic after pulling the repo, with no sudo, host-PipeWire restart, default-sink change, or system security modifications.
+
+PipeWire reference: https://docs.pipewire.org/page_module_metadata.html
+
 ## What is actually tested
 
 - Silence, left impulse, right impulse, quiet synthetic audio, loud synthetic audio.
