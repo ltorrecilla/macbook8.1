@@ -120,6 +120,80 @@ def compare_python_ffmpeg(data, rows):
             'ffmpeg_peak': magnitude, 'passed': True}
 
 
+def bilinear_rate_convert(row, source_rate=44100, target_rate=48000):
+    """Re-map a digital biquad via bilinear substitution (candidate, NOT parity)."""
+    import cmath
+    if source_rate <= 0 or target_rate <= 0:
+        raise ValueError("Sample rates must be positive")
+    ratio = target_rate / source_rate
+    p = 1.0 - ratio
+    q = 1.0 + ratio
+
+    def transform(prefix):
+        c0, c1, c2 = (row[prefix + str(i)] for i in range(3))
+        return (c0*q*q + c1*p*q + c2*p*p,
+                2*c0*p*q + c1*(p*p+q*q) + 2*c2*p*q,
+                c0*p*p + c1*p*q + c2*q*q)
+
+    numerator = transform("b")
+    denominator = transform("a")
+    if abs(denominator[0]) < 1e-15 or not all(math.isfinite(x) for x in numerator+denominator):
+        raise ValueError("Invalid rate conversion")
+    result = {name: float(value / denominator[0])
+              for name, value in zip(COEF_NAMES, numerator+denominator)}
+    a1, a2 = result["a1"], result["a2"]
+    poles = [(-a1 + sign*cmath.sqrt(a1*a1 - 4*a2))/2 for sign in (1, -1)]
+    if any(abs(x) >= 1.0 for x in poles):
+        raise ValueError("Rate conversion creates unstable filter")
+    return result
+
+
+def cascade_response_db(rows, sample_rate, freq_hz):
+    """Frequency-domain analysis only; no audio streams or PipeWire use."""
+    import cmath
+    if freq_hz <= 0 or freq_hz >= sample_rate/2:
+        raise ValueError("Comparison frequency must be below Nyquist")
+    z = cmath.exp(-2j * math.pi * freq_hz / sample_rate)
+    result = 1.0 + 0j
+    for row in rows:
+        num = row["b0"] + row["b1"]*z + row["b2"]*z*z
+        den = row["a0"] + row["a1"]*z + row["a2"]*z*z
+        result *= num/den
+    if abs(result) <= 0:
+        return float("-inf")
+    return 20*math.log10(abs(result))
+
+
+def rate_audit(rows, old_rate=44100, new_rate=48000):
+    """Quantify response drift; do not export potentially unsafe 48k coefficients."""
+    transformed = [bilinear_rate_convert(x, old_rate, new_rate) for x in rows]
+    intervals = ((20, 5000), (5000, 12000), (12000, 18000), (18000, 20000))
+    result = {"source_hz": old_rate, "graph_hz": new_rate,
+              "method": "digital-bilinear re-map (NOT a parity certificate)",
+              "sampled_max_abs_difference_db": {}, "spot_check_db": {}}
+    for lo, hi in intervals:
+        worst = {"unchanged_44k_coeffs_at_48k": (0.0, lo),
+                 "bilinear_remap_48k": (0.0, lo)}
+        for i in range(201):
+            f = lo * (hi/lo)**(i / 200)
+            reference = cascade_response_db(rows, old_rate, f)
+            for key, sample_rows in (("unchanged_44k_coeffs_at_48k", rows),
+                                     ("bilinear_remap_48k", transformed)):
+                delta = cascade_response_db(sample_rows, new_rate, f) - reference
+                if abs(delta) > abs(worst[key][0]):
+                    worst[key] = (delta, f)
+        result["sampled_max_abs_difference_db"][f"{lo}-{hi}Hz"] = {
+            key: {"delta_db": round(value[0], 4), "frequency_hz": round(value[1], 1)}
+            for key, value in worst.items()}
+    for f in (100, 300, 1000, 3000, 5000, 10000, 15000, 18000, 20000):
+        ref = cascade_response_db(rows, old_rate, f)
+        result["spot_check_db"][str(f)] = {
+            "reference_44100": round(ref, 4),
+            "unchanged_48000_delta": round(cascade_response_db(rows, new_rate, f)-ref, 4),
+            "bilinear_48000_delta": round(cascade_response_db(transformed, new_rate, f)-ref, 4)}
+    return result
+
+
 def pipewire_graph(rows):
     """Inert filter.graph snippet, NOT a complete PipeWire module/sink."""
     lines = [
@@ -171,11 +245,22 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--profile', required=True, type=Path,
                         help='Private D+ v4 JSON reference profile')
-    parser.add_argument('--output-dir', required=True, type=Path,
+    parser.add_argument('--rate-audit', action='store_true',
+                        help='Compare 44.1k and 48k EQ responses offline; write nothing')
+    parser.add_argument('--output-dir', type=Path,
                         help='Fresh or empty output folder')
     args = parser.parse_args()
     try:
-        execute(args.profile, args.output_dir)
+        if args.rate_audit:
+            if args.output_dir is not None:
+                raise ValueError('--rate-audit does not accept --output-dir')
+            results = rate_audit(load_rows(args.profile))
+            print(json.dumps(results, indent=2))
+            print('Comparison only; neither 48-kHz option is approved for playback.')
+        else:
+            if args.output_dir is None:
+                raise ValueError('--output-dir is required unless --rate-audit is selected')
+            execute(args.profile, args.output_dir)
         return 0
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError, json.JSONDecodeError) as e:
         print('ERROR:', e, file=sys.stderr)
