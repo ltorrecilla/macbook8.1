@@ -1,6 +1,6 @@
 # Continuation checkpoint — MacBook8,1 CachyOS
 
-> **Historical investigation (October 18–19, 2026).** Preserved for original observations, recordings, failures and handoff notes. The “start here next time” instructions below are dated; for current decisions use the [audio guide map](audio-guide-map.md), [audio update recovery](audio-update-recovery.md), and [documentation index](INDEX.md).
+> **Historical investigation (October 18–19, 2026).** Preserved for original observations, recordings, failures and handoff notes. The “start here next time” instructions below are dated; for current decisions use the [audio guide map](INDEX.md), [audio update recovery](audio-update-recovery.md), and [documentation index](INDEX.md).
 
 Saved 2026-10-18 at the owner's request to pause and continue later. Updated 2026-10-19 with hibernation compatibility and preparation progress. This records the October 2026 conversation, uploaded evidence, and completed analyses; it is not a new hardware test or release.
 
