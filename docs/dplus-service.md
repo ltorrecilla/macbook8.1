@@ -56,6 +56,12 @@ The existing preview already includes an extra **+1.0 dB at 3 kHz** presence sta
 
 The test should use the same speech excerpt and roughly matched loudness at modest volume, starting/stopping each variant separately (per-app KDE selector only, not global default). If the extra half-decibel does not clearly improve natural speech or causes sharp consonants, retain the already functioning +1.0 dB setting. A slightly muffled impression could also result from the intentionally lower gain rather than filter shape; do not increase global volume, driver gain, or the original +8.31 dB pregain as a shortcut.
 
+### 2026-10-24 — Presence A/B verdict
+
+The owner tested the +1.5 dB presence variant and preferred the **earlier +1.0 dB** D+ native low-gain preview (“before was better”). **Do not promote the +1.5 dB voice variant.** Preserve the exact earlier processing/limiter settings as the preferred listening baseline, while recognizing that perceived slight vocal muffling was not objectively traced to a specific EQ component. The owner has not approved additional EQ changes.
+
+Return to the earlier per-app preview by stopping the A/B version with Ctrl+C and running `python3 ~/Downloads/dplus-preview/dplus-live-preview.py --profile ~/Downloads/dplus-v4-reference-profile.json --start`. Keep `MacBook_Speaker_Raw` globally selected. Resume/default reliability and formal latency/safety testing remain open; do not enable the old failed D+ bridge.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
