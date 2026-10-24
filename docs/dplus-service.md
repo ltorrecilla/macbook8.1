@@ -84,6 +84,10 @@ An opt-in, **user-held v3 ZIP** has been prepared in the conversation (not in th
 
 The safe default remains the old native preview using per-application KDE routing, not enabling D+ as global default. On any further failure, use the exact reported sink name to decide whether this is transient preview selection or an entirely different output-routing problem. No new driver or EQ changes are justified by these logs.
 
+### 2026-10-24 — v3 first real sleep/wake restart: script reports success
+
+Owner ran the opt-in v3 resume script and it remained running after reporting `Detected sleep/wake transition` and `D+ preview recreated after recovery. Re-select your application output in KDE if needed.` This is the first owner-observed **completion of the restart path after sleep**, unlike earlier v1/v2 fatal shutdowns. The test has **not yet confirmed that the user can hear D+ after wake** or that the app stream is routed back to the preview rather than Raw. Keep the existing +1 dB DSP and Raw default unchanged; the next acceptance check is to select D+ again for the individual application's playback stream and confirm the audio source by listening.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
