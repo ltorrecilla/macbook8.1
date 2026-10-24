@@ -62,6 +62,12 @@ The owner tested the +1.5 dB presence variant and preferred the **earlier +1.0 d
 
 Return to the earlier per-app preview by stopping the A/B version with Ctrl+C and running `python3 ~/Downloads/dplus-preview/dplus-live-preview.py --profile ~/Downloads/dplus-v4-reference-profile.json --start`. Keep `MacBook_Speaker_Raw` globally selected. Resume/default reliability and formal latency/safety testing remain open; do not enable the old failed D+ bridge.
 
+### 2026-10-24 — Resume-aware per-app experiment (pending real hardware validation)
+
+A separate downloadable user-held experimental version of the **approved +1.0 dB lower-gain preview** has been prepared for one bounded sleep/wake test; it is **not installed** and not yet part of the tracked release scripts. Its DSP configuration generator is unchanged from the previously working one-app preview; nine offline recovery tests pass. On wake it attempts to recreate its **own temporary PipeWire client** after Raw returns, with a 30-second maximum wait and at most three attempts; the app may need to be reselected through KDE. It does **not** modify the global default, repair the codec/driver, alter WirePlumber, or auto-start at login.
+
+**Release gate unchanged:** owner must confirm audio before and after wake, no feedback, and safe Ctrl+C cleanup. The observed prior disappearance after suspend was with the previous/old configuration and cannot be treated as proof of failure or success for the newly prepared preview. Original known-working preview remains available for rollback; the old D+ FFmpeg bridge stays disabled.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
