@@ -100,6 +100,12 @@ Inspection of v3's generated `playback.props` shows `target.object=MacBook_Speak
 
 **Next narrowly scoped diagnosis with audio playing:** compare the app's sink ID in `pactl list short sink-inputs` with `pactl list short sinks`, and inspect `pw-link -lI` for links involving `MacBook_Speaker_D_Preview`, `dplus_preview_to_raw`, and `MacBook_Speaker_Raw`. If the app→D+ edge is absent, address stream routing; if the D+→Raw link is absent, address filter-chain output reconnection. Do not keep changing the v3 script on guesses. Keep Raw as default and stop the experimental child with Ctrl+C when finished.
 
+### 2026-10-24 — Resume graph narrowed: Firefox bypasses D+ despite restored bridge
+
+The owner supplied the PipeWire link graph after waking with the v3 preview. Sink 69 `MacBook_Speaker_Raw` is RUNNING, sink 2912 `MacBook_Speaker_D_Preview` is SUSPENDED. Every `pactl list short sink-inputs` entry targets **69**, not 2912; `pw-link -lI` independently shows Firefox ports linked **directly to Raw**, alongside working `dplus_preview_to_raw:output_*` links to Raw. Thus the immediate issue visible in the snapshot is **application input is not reaching the restored D+ sink**; the output-to-Raw link has actually reappeared. A SUSPENDED D+ sink without clients does not by itself show a broken DSP.
+
+**Next test is direct, per-app routing only:** identify one active Firefox sink-input by `pactl list sink-inputs` and move only that entry via `pactl move-sink-input <id> MacBook_Speaker_D_Preview`. Confirm its sink ID changes to 2912 and listen; if KDE/WirePlumber moves it back, capture that. Never move the `dplus_preview_to_raw` return stream into its own preview sink (feedback danger). Global default remains Raw; reversibility: `pactl move-sink-input <id> MacBook_Speaker_Raw`. No speculative filter or HDA changes needed at this stage.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
