@@ -106,6 +106,10 @@ The owner supplied the PipeWire link graph after waking with the v3 preview. Sin
 
 **Next test is direct, per-app routing only:** identify one active Firefox sink-input by `pactl list sink-inputs` and move only that entry via `pactl move-sink-input <id> MacBook_Speaker_D_Preview`. Confirm its sink ID changes to 2912 and listen; if KDE/WirePlumber moves it back, capture that. Never move the `dplus_preview_to_raw` return stream into its own preview sink (feedback danger). Global default remains Raw; reversibility: `pactl move-sink-input <id> MacBook_Speaker_Raw`. No speculative filter or HDA changes needed at this stage.
 
+### 2026-10-24 — Confirmed post-wake routing bypass
+
+The owner's read-only graph confirms that **all five sink-inputs target Raw sink 69**, not the recreated D+ sink 2912. `pw-link -lI` confirms the `dplus_preview_to_raw` output ports are in fact linked to Raw and that Firefox ports are likewise linked **directly to Raw**. Therefore an absent D+→Raw connection is **not** the observed cause of the silence in this snapshot; D+ is SUSPENDED because it has no demonstrated application input. The next controlled test is to identify one Firefox playing stream and explicitly `pactl move-sink-input <id> MacBook_Speaker_D_Preview`, verify the sink ID becomes 2912, and listen. Do not move D+'s own output bridge to D+, or change the global Raw default. See [Issue #39](https://github.com/ltorrecilla/macbook8.1/issues/39) for the full evidence.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
