@@ -150,6 +150,14 @@ Following [upstream PipeWire LFE topology](https://github.com/PipeWire/pipewire/
 
 The package includes an unambiguous 20-second moderate test WAV and local topology/self-checks that pass. **This is not a confirmed live sound fix**, because the test machine lacks PipeWire and a MacBook CS4208. Next test is precisely one owner-controlled `pw-play --target=MacBook_Speaker_D_Preview` audition while the fixed graph is running, keeping Raw default and avoiding KDE UI and suspend tests. Successful output would be the first required acceptance gate; later use a persistent PipeWire/WirePlumber speaker-specific design and accessible GUI, not more Python preview layers. Prior repository assumptions that any “Ready” meant live DSP were invalid.
 
+### 2026-10-25 — Corrected topology AUDIBLE on actual MacBook
+
+**Owner-confirmed hardware result:** the latest standalone `dplus-graph-topology-corrected-experimental.zip` produces **audible sound** from its 20-second test WAV sent directly with `pw-play --target=MacBook_Speaker_D_Preview`. This is the first on-device confirmation that the two-stage copy topology (`copyL` internal tee → `copyOutL` dedicated graph output, mirrored right) can successfully start and deliver audible PCM to the MacBook's speakers. The previous experimental graph revisions produced PipeWire runtime errors on activation and silent playback despite exposed sinks and links.
+
+**Scope:** do not infer exact D+ v4 sonic/limiter parity, normal Firefox/KDE stream routing, audio/video latency, persistent default selection or suspend/resume recovery from one audible tone. The original owner-preferred +1 dB presence and conservative gain-limited DSP were unchanged by the topology repair. The test ZIP is still experimental and user-held; no production persistent service or GUI installer exists.
+
+**Next gate with frozen DSP:** audition a brief real speech/music excerpt using the exact same corrected preview and `pw-play --target` WAV approach at comfortable volume. No further graph rewrites or resume-script iterations absent new evidence. Once ordinary content is proven through D+, prioritize a stable declarative PipeWire filter-chain and safe WirePlumber speaker-default policy with a one-click GUI installer, always retaining Raw as rollback.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
