@@ -158,6 +158,14 @@ The package includes an unambiguous 20-second moderate test WAV and local topolo
 
 **Next gate with frozen DSP:** audition a brief real speech/music excerpt using the exact same corrected preview and `pw-play --target` WAV approach at comfortable volume. No further graph rewrites or resume-script iterations absent new evidence. Once ordinary content is proven through D+, prioritize a stable declarative PipeWire filter-chain and safe WirePlumber speaker-default policy with a one-click GUI installer, always retaining Raw as rollback.
 
+### 2026-10-25 — Real music playback through corrected native D+
+
+Owner reports **“works”** after using the existing `dplus-topology-preview.py` and directly targeting its sink with a familiar 30-second MP3 excerpt converted to 48-kHz stereo WAV (`pw-play --target=MacBook_Speaker_D_Preview`). Together with the previously audible 20-second tone, this confirms **real musical PCM reaches the speakers through the two-stage-copy PipeWire graph** on the actual MacBook8,1. This is more substantial than mere registration or a static graph test. Preserve this exact working topology and the owner-preferred **+1.0 dB presence setting**. Do not change the DSP to solve lifecycle problems.
+
+**Boundaries:** the ephemeral preview is not a supported always-on product. Its direct `pw-play` route bypasses KDE. Normal-app routing, relative loudness, full D+ v4 limiter dynamics, long-session A/V sync, default-device safety, sleep recovery and recovery from PipeWire/WirePlumber restarts are not validated for this corrected graph. Earlier resume candidates had broken graph topology and must not be promoted.
+
+**Delivery plan:** (1) capture the working generated filter-chain topology into an installed, managed, persistent *user-session* PipeWire unit with the same Raw playback target and safe stop/cleanup; (2) verify ordinary per-app music/video with Raw system default, and one wake without moving the global default; (3) implement an opt-in WirePlumber speaker-default strategy that avoids feedback and respects headphones/Bluetooth, with rollback; (4) build a GUI installer with safe Test/Enable/Use Raw/Restore controls, rather than requiring terminal interaction. The known-good Raw and the disabled legacy FFmpeg D+ bridge remain preserved.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
