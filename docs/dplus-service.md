@@ -110,6 +110,10 @@ The owner supplied the PipeWire link graph after waking with the v3 preview. Sin
 
 The owner's read-only graph confirms that **all five sink-inputs target Raw sink 69**, not the recreated D+ sink 2912. `pw-link -lI` confirms the `dplus_preview_to_raw` output ports are in fact linked to Raw and that Firefox ports are likewise linked **directly to Raw**. Therefore an absent D+→Raw connection is **not** the observed cause of the silence in this snapshot; D+ is SUSPENDED because it has no demonstrated application input. The next controlled test is to identify one Firefox playing stream and explicitly `pactl move-sink-input <id> MacBook_Speaker_D_Preview`, verify the sink ID becomes 2912, and listen. Do not move D+'s own output bridge to D+, or change the global Raw default. See [Issue #39](https://github.com/ltorrecilla/macbook8.1/issues/39) for the full evidence.
 
+### 2026-10-24 — Firefox move rejected or reverted after wake
+
+The owner identified playing Firefox sink-input 4351, attempted `pactl move-sink-input 4351 MacBook_Speaker_D_Preview`, then found it **still mapped to Raw sink 69**, with D+ 2912 still **SUSPENDED** and reported no audio. A manual move is therefore insufficient; whether WirePlumber undid it or the node couldn't accept the stream is not yet established. The D+ output-to-Raw link was already visible in the previous graph. **Next controlled test:** restore Firefox to Raw, stop v3 via Ctrl+C, check basic Raw playback, then start the exact same v3 script again while fully awake and route one app to it. This distinguishes the after-wake reinstantiation state from a general session routing failure without another code change.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
