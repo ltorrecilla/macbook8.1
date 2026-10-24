@@ -32,6 +32,14 @@ The preview deliberately omits the original +8.31-dB pregain, runs the limiter a
 
 **Acceptance gate:** on the owner's laptop, confirm temporary output appears, one application can play through it, Raw stays default, startup/stop are reversible, and no unexpected distortion or delay occurs. Only then commit/refine it as an experimental supported repo workflow. Do not enable the old D+ service to test this.
 
+### 2026-10-24 — KDE device selection versus application routing
+
+Owner installed the LSP LV2 dependency and the downloadable first real-time preview successfully displayed `Ready: MacBook_Speaker_D_Preview`. On selecting the new output in KDE, the preview printed `STOP: System default changed; stopping trial`; its temporary output disappeared. This matches the preview's **deliberate guard**: it closes itself if the global default is no longer `MacBook_Speaker_Raw`. This is **not** proof of a DSP error or sleep failure. The reported logs do not distinguish exactly which KDE control was used, but selecting the output under **Output Devices** typically changes the global default.
+
+**One-app audition:** keep the preview running, start audio playback in an app, then choose D+ only for that app under KDE's **Applications / Playback Streams** audio controls. **Do not** select D+ in KDE's global **Output Devices** list during this experimental trial. Keep Raw as the system default and stop with Ctrl+C. If the app routes correctly, the next acceptance question is whether audio is actually heard without undue latency/distortion. [Track outcome in Issue #39](https://github.com/ltorrecilla/macbook8.1/issues/39).
+
+The finished D+ product must eventually be able to act as the global speaker default. This temporary prototype guard is a research safety measure and cannot simply be removed until we have verified that the final graph cannot loop back into itself.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
