@@ -114,6 +114,10 @@ The owner's read-only graph confirms that **all five sink-inputs target Raw sink
 
 The owner identified playing Firefox sink-input 4351, attempted `pactl move-sink-input 4351 MacBook_Speaker_D_Preview`, then found it **still mapped to Raw sink 69**, with D+ 2912 still **SUSPENDED** and reported no audio. A manual move is therefore insufficient; whether WirePlumber undid it or the node couldn't accept the stream is not yet established. The D+ output-to-Raw link was already visible in the previous graph. **Next controlled test:** restore Firefox to Raw, stop v3 via Ctrl+C, check basic Raw playback, then start the exact same v3 script again while fully awake and route one app to it. This distinguishes the after-wake reinstantiation state from a general session routing failure without another code change.
 
+### 2026-10-24 — Plasma tray virtual-device visibility
+
+Owner observes D+ in **System Settings → Sound** but not in tray Audio Volume's per-application destination menu or device list. KDE Plasma's tray widget can **hide virtual outputs by default**, independently of the backend `pactl` list; KDE provides **Show virtual devices** via the tray audio popup menu (sometimes the hamburger) or right-click speaker → Configure Audio Volume. See [KDE's discussion](https://discuss.kde.org/t/simultaneous-audio-output/6274) and [matching Plasma 6 bug report](https://mail-archive.com/kde-bugs-dist%40kde.org/msg906610.html). First enable this UI setting and reselect D+ for the playing Firefox stream. Do **not** use the global-default selector or change audio filters. This may resolve the missing option but has **not yet proved the failed manual move and post-resume silence are fixed**; check audible playback and stream target before marking recovery functional.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
