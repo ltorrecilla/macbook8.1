@@ -48,6 +48,14 @@ The owner confirmed **“works”** after following the per-application KDE rout
 
 **Next task (no new script):** while the preview is running, route a video player's audio **only for that application**, perform pause/resume and seeking repeatedly (initial small sample, then the planned 20-cycle test), check for any growing A/V delay or dropouts, and stop with Ctrl+C. Observe whether stopping removes the preview and normal Raw audio remains. Only after that should we refine the limiter, level, and automatic resume/default handling.
 
+### 2026-10-24 — Playback feedback and controlled vocal-clarity trial
+
+Owner reports the opt-in lower-gain D+ preview has been **working well so far, without noticed functional issues**; voices remain **very slightly muffled**. This is encouraging but not proof of long-duration sync, measured latency or exact D+ v4 dynamics.
+
+The existing preview already includes an extra **+1.0 dB at 3 kHz** presence stage. A privately supplied experimental A/B variant (not yet in the repository) holds the 11 source biquads, 48-kHz correction filters, reduced-gain LSP limiter, final clamp, stereo-to-Raw `L,R,0,0` mapping, and default-selection guard unchanged. It permits just **+1.0 versus +1.5 dB** on the 3-kHz band. Six offline safety/graph consistency tests passed, but the brighter variant has **not** been listened to or validated on this MacBook.
+
+The test should use the same speech excerpt and roughly matched loudness at modest volume, starting/stopping each variant separately (per-app KDE selector only, not global default). If the extra half-decibel does not clearly improve natural speech or causes sharp consonants, retain the already functioning +1.0 dB setting. A slightly muffled impression could also result from the intentionally lower gain rather than filter shape; do not increase global volume, driver gain, or the original +8.31 dB pregain as a shortcut.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
