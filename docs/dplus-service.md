@@ -128,6 +128,14 @@ Owner observes D+ in **System Settings → Sound** but not in tray Audio Volume'
 
 **Long-term design change:** once the audio graph proves functional, stop adding layers to the disposable preview. Implement a persistent PipeWire filter-chain output under user-session management and a WirePlumber speaker-specific default policy that never feeds its own output back into itself, respects external headphones/Bluetooth, recovers from wake, and provides explicit rollback. Wrap installation and on/off/diagnostics in a GUI rather than requiring nontechnical Mac users to run terminals. This is an architectural plan, not yet implemented, and any future default switch must be tested and reversible.
 
+### 2026-10-24 — Graph-fixed preview: silence in direct PipeWire audition
+
+After the proposed `copyL`/`copyR` graph topology correction, owner reports `pw-play --target=MacBook_Speaker_D_Preview ~/Downloads/dplus-graphfix/quiet-check.wav` **does not produce an audible tone**, although Audacity plays the WAV. D+ is still visible in System Settings but not in the Plasma tray. Raw is selected globally; the owner perceives normal playback as D+-like, but previous PipeWire link reports show another `MacBook_Speaker_DSP_Out` also feeding Raw, so sound character and default selection cannot establish that the new preview actually processed samples. **Graph fix has NOT passed hardware-audio acceptance; don't claim success**.
+
+The bundled 550 Hz tone's peak is only **0.04498** (about −27 dBFS); the preview limiter's conservative `g_out=0.35` reduces it by about another 9 dB at this frequency, suggesting a ~−36 dBFS peak before speaker volume. **Inaudibility alone remains ambiguous**: target-link failure, active graph error, or a tone that's simply too quiet. Upstream `pw-play --target=<node.name>` is syntactically correct; the script's `Ready` is still only a sink-name registration check, not verification of PCM activation.
+
+**Do not create another script revision on this evidence.** First compare the identical WAV using `pw-play --target=MacBook_Speaker_Raw ~/Downloads/dplus-graphfix/quiet-check.wav` at ordinary listening volume. If Raw also inaudible, the sample/test method is weak; if Raw audible and D+ inaudible, inspect filter-chain client stdout/stderr and the real playback link while the stream is active. Keep Raw default, no wake/default tests, and stop the opt-in preview with Ctrl+C. Add a genuine running PCM/link acceptance test before promoting any future `Ready` result. [Issue #39](https://github.com/ltorrecilla/macbook8.1/issues/39) tracks this.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
