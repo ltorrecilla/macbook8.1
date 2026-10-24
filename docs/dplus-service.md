@@ -22,6 +22,16 @@
 
 **Decision (2026-10-23): stop iterating on the stripped-down private PipeWire smoke-test harness.** Its purpose—proving native filter-chain module availability—is complete. Its missing ports do not establish a defective `bq_raw` filter, bad hardware driver or production PipeWire incompatibility. Next development must deliver *actual audio*, not another node-enumeration report.
 
+## 2026-10-24 handoff — first listenable prototype
+
+The next step has changed from private PipeWire node-registration diagnostics to an **opt-in real-time listening trial**. A standalone `dplus-live-preview.py` proof-of-concept was prepared in the conversation and packaged for private owner testing; it is **not committed to this repository** until its actual first audio output and safe stop/recovery have been validated on the MacBook. [Issue #39](https://github.com/ltorrecilla/macbook8.1/issues/39) tracks its acceptance.
+
+The experimental client runs `pipewire -c preview.conf` against the existing user PipeWire/WirePlumber session, exposing a temporary selectable output for **one manually routed application**. It generates 48-kHz-matched D+ EQ from the owner's locally held profile, an extra 3-kHz presence stage, and an **LSP Limiter Stereo LV2** candidate, then explicitly targets the four-channel `MacBook_Speaker_Raw` device with `L,R,0,0`. In development, the 11-filter magnitude response plus corrective filters matched the original with a maximum sampled error of about 0.0589 dB; six offline Python unit tests passed. **None of these tests proves live PipeWire audio, limiter dynamics, phase or physical safety.**
+
+The preview deliberately omits the original +8.31-dB pregain, runs the limiter at unity input gain and reduced output gain (0.35), and includes a post-limiter hard clamp. It will sound **quieter than approved D+ v4**; it is not presented as an equivalent calibrated preset. The LV2 plugin may need the distro `lsp-plugins-lv2` package, but no package is installed automatically.
+
+**Acceptance gate:** on the owner's laptop, confirm temporary output appears, one application can play through it, Raw stays default, startup/stop are reversible, and no unexpected distortion or delay occurs. Only then commit/refine it as an experimental supported repo workflow. Do not enable the old D+ service to test this.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
