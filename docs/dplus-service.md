@@ -40,6 +40,14 @@ Owner installed the LSP LV2 dependency and the downloadable first real-time prev
 
 The finished D+ product must eventually be able to act as the global speaker default. This temporary prototype guard is a research safety measure and cannot simply be removed until we have verified that the final graph cannot loop back into itself.
 
+### 2026-10-24 — First audible real-time preview confirmed
+
+The owner confirmed **“works”** after following the per-application KDE routing instructions for the experimental `MacBook_Speaker_D_Preview` client. This is the first confirmed **live native PipeWire preview playback** on the MacBook through a selected application. The preview appeared earlier but stopped when chosen as KDE's **global** default; that shutdown is intentional. The later successful playback was achieved with the per-application selection method.
+
+**Do not overstate this milestone:** the experimental preview is intentionally lower-gain and is **not** equivalent to the approved D+ v4 limiter or loudness. The owner has not yet reported objective A/V delay, matched sound quality, measured latency, long-playback stability, headphone behavior, or suspend/resume recovery. The experimental script is still a user-held bundle, not a validated installed package. Raw remains the intended default; the latest successful listening report did not separately reprint the default sink state.
+
+**Next task (no new script):** while the preview is running, route a video player's audio **only for that application**, perform pause/resume and seeking repeatedly (initial small sample, then the planned 20-cycle test), check for any growing A/V delay or dropouts, and stop with Ctrl+C. Observe whether stopping removes the preview and normal Raw audio remains. Only after that should we refine the limiter, level, and automatic resume/default handling.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
