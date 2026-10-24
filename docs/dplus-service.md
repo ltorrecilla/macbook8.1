@@ -68,6 +68,14 @@ A separate downloadable user-held experimental version of the **approved +1.0 dB
 
 **Release gate unchanged:** owner must confirm audio before and after wake, no feedback, and safe Ctrl+C cleanup. The observed prior disappearance after suspend was with the previous/old configuration and cannot be treated as proof of failure or success for the newly prepared preview. Original known-working preview remains available for rollback; the old D+ FFmpeg bridge stays disabled.
 
+### 2026-10-24 — Actual resume failure and narrowly targeted fix
+
+Owner reproduced a failure with the first experimental resume-aware preview: it detected sleep/wake but then exited because `pactl list short sinks` returned status 1 during recovery. Source inspection revealed the original code retried temporary `pactl` failures while waiting for Raw, but made additional **unprotected** `pactl` calls while launching and observing the replacement D+ sink. A transient failure after the first successful Raw check could still terminate the preview. The exact failing call cannot be pinpointed without a traceback; this is a source-supported explanation, not a proven final hardware diagnosis.
+
+A separate privately downloadable **v2** script addresses this gap without changing DSP or system audio configuration. It waits for Raw to be the default, retries transient command errors while waiting up to 12 seconds for its own replacement sink, and retains 30-second Raw readiness and three-recovery ceilings. Fifteen unit tests passed offline; the new full DSP configuration text is byte-for-byte identical to the previously audible +1.0 dB preview. **It has not yet been validated through a real wake cycle.** The old v1 script remains an available fallback and is not overwritten.
+
+Application routing is still a separate problem: KDE may move an application back to Raw when the transient preview sink disappears. Successful restart of the D+ client would not yet restore that application's per-stream selection. Do not change the global default or re-enable the obsolete FFmpeg service as a workaround.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
