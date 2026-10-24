@@ -92,6 +92,14 @@ Owner ran the opt-in v3 resume script and it remained running after reporting `D
 
 After the v3 script reported successful recreation, the owner ran `pactl get-default-sink` and `pactl list short sinks`: global default remained `MacBook_Speaker_Raw` (RUNNING at S16LE/4ch/44.1 kHz), and `MacBook_Speaker_D_Preview` was **present** again (SUSPENDED at float32/2ch/48 kHz). This independently confirms successful output reappearance on the actual laptop after wake without manually restarting the Python process. SUSPENDED can be normal for an idle output. **Still to verify:** manually route a playing app to D+ again and hear the D+ processing after wake; automatic stream routing and recurring resume reliability remain open. Details in [Issue #39](https://github.com/ltorrecilla/macbook8.1/issues/39).
 
+### 2026-10-24 — Correction: restored sink is silent after wake
+
+The owner followed up: although v3 remained running and PipeWire listed `MacBook_Speaker_D_Preview` again, **there is no audible D+ sound when attempting playback after wake**, and the preview sink stays SUSPENDED. **Previous wording implying successful end-to-end recovery was premature.** Only wake detection and sink recreation have been demonstrated; the audio graph is not confirmed functional after resume.
+
+Inspection of v3's generated `playback.props` shows `target.object=MacBook_Speaker_Raw`, `node.passive=true`, `node.dont-fallback=true`, `node.dont-move=true`, and `node.dont-reconnect=true`. The replacement client currently considers startup successful when the **preview sink name appears**, not when its Raw playback stream is actually linked. WirePlumber's documented `node.dont-reconnect` behavior makes lost target relinking after device recreation plausible, but the exact failed edge is not yet known.
+
+**Next narrowly scoped diagnosis with audio playing:** compare the app's sink ID in `pactl list short sink-inputs` with `pactl list short sinks`, and inspect `pw-link -lI` for links involving `MacBook_Speaker_D_Preview`, `dplus_preview_to_raw`, and `MacBook_Speaker_Raw`. If the app→D+ edge is absent, address stream routing; if the D+→Raw link is absent, address filter-chain output reconnection. Do not keep changing the v3 script on guesses. Keep Raw as default and stop the experimental child with Ctrl+C when finished.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
