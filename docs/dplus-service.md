@@ -76,6 +76,14 @@ A separate privately downloadable **v2** script addresses this gap without chang
 
 Application routing is still a separate problem: KDE may move an application back to Raw when the transient preview sink disappears. Successful restart of the D+ client would not yet restore that application's per-stream selection. Do not change the global default or re-enable the obsolete FFmpeg service as a workaround.
 
+### 2026-10-24 — v2 wake report and restricted v3 default-restoration option
+
+With v2 the owner saw D+ start and detect sleep/wake, then exit: `STOP: System default changed away from Raw; stopping preview`. In the v2 source this string is emitted in the **replacement sink readiness loop** (`wait_for_preview_seen`), after waiting for Raw initially. The actual unexpected default was **not logged**. WirePlumber can restore user-selected default outputs on device reappearance, so startup order is a plausible explanation, not a confirmed culprit.
+
+An opt-in, **user-held v3 ZIP** has been prepared in the conversation (not in this repository as a release). It preserves the exact preferred +1.0 dB low-gain D+ DSP graph, adds the precise unexpected default to error messages and supports `--restore-raw-on-wake`. With that flag, during detected wake recovery **only**, it may issue `pactl set-default-sink MacBook_Speaker_Raw` **once** if Raw is present and the newly selected default is **exactly its own temporary D+ preview**. It must never override headphones/Bluetooth/USB/HDMI or an intentional other selection. Without the flag the script changes no default. Because WirePlumber remembers manual default selections, this opt-in may update the persisted preference to Raw. 21 offline tests passed; **hardware validation remains outstanding**.
+
+The safe default remains the old native preview using per-application KDE routing, not enabling D+ as global default. On any further failure, use the exact reported sink name to decide whether this is transient preview selection or an entirely different output-routing problem. No new driver or EQ changes are justified by these logs.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
