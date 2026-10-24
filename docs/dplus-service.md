@@ -88,6 +88,10 @@ The safe default remains the old native preview using per-application KDE routin
 
 Owner ran the opt-in v3 resume script and it remained running after reporting `Detected sleep/wake transition` and `D+ preview recreated after recovery. Re-select your application output in KDE if needed.` This is the first owner-observed **completion of the restart path after sleep**, unlike earlier v1/v2 fatal shutdowns. The test has **not yet confirmed that the user can hear D+ after wake** or that the app stream is routed back to the preview rather than Raw. Keep the existing +1 dB DSP and Raw default unchanged; the next acceptance check is to select D+ again for the individual application's playback stream and confirm the audio source by listening.
 
+### 2026-10-24 — v3 temporary output confirmed after physical wake
+
+After the v3 script reported successful recreation, the owner ran `pactl get-default-sink` and `pactl list short sinks`: global default remained `MacBook_Speaker_Raw` (RUNNING at S16LE/4ch/44.1 kHz), and `MacBook_Speaker_D_Preview` was **present** again (SUSPENDED at float32/2ch/48 kHz). This independently confirms successful output reappearance on the actual laptop after wake without manually restarting the Python process. SUSPENDED can be normal for an idle output. **Still to verify:** manually route a playing app to D+ again and hear the D+ processing after wake; automatic stream routing and recurring resume reliability remain open. Details in [Issue #39](https://github.com/ltorrecilla/macbook8.1/issues/39).
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
