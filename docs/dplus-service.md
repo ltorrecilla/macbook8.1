@@ -194,6 +194,12 @@ Owner clarified that audible choppiness appears after `manage-native.py start`, 
 
 **Next discriminating test, no code changes:** after starting the service while Firefox is playing, run `route-app.py list`. If Firefox is on D+, run `route-app.py raw --id ID` and observe whether choppiness disappears **with D+ service still active**. If Firefox is already on Raw and choppy, compare to stopping D+ service. This distinguishes active signal-path timing problems from simply having the graph process running; get `pw-top` only after establishing which route produces the symptom. [Issue #39](https://github.com/ltorrecilla/macbook8.1/issues/39) holds the details.
 
+### 2026-10-25 — Firefox Raw reroute works; isolate D+ real-time processing
+
+Owner confirmed that `route-app.py raw --id ID` **worked** after Firefox playback through the manually started native D+ service became choppy. Combined with prior real graph evidence—Firefox→D+→Raw rather than two serial D+ instances—this supports **choppy audio localized to the D+ playback route**, though its exact mechanism is still unknown. Do not mistake successful rerouting for proof of DSP CPU overload, nor delete the parallel old EQ path without evidence. WirePlumber may be restoring the remembered Firefox→D+ selection when the virtual sink reappears, but the latest start event's automatic routing was not measured.
+
+**Next:** while Firefox is audibly choppy via D+, take one brief `pw-top -b -n 6` capture (ERR/W/Q/B/Q, QUANT/RATE), then reroute its stream to Raw again. No changes to approved +1 dB EQ, limiter, system rate, driver or default device; D+ automatic enable/default and suspend recovery remain gated behind smooth ordinary-app playback.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
