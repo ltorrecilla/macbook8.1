@@ -1,6 +1,6 @@
 ## Route one normal application through the managed D+ service (experimental)
 
-**Hardware status:** the managed user service has already produced audible sound with the explicit `pw-play --target` test. Ordinary application routing **has not been verified yet**. This tool is a narrow test of that missing step; it does not change D+ DSP, the service, any default device, or WirePlumber configuration.
+**Hardware status:** the managed user service has produced audible sound with `pw-play`. Firefox was also routed to D+ and sounded **choppy**, so normal-application playback is NOT yet acceptable. This tool is a narrow test of that missing step; it does not change D+ DSP, the service, any default device, or WirePlumber configuration.
 
 Use the helper from the repository root, as your **ordinary desktop user** (never `sudo`). Stop any old temporary preview first. Verify that `MacBook_Speaker_Raw` is still the system default and the managed service is running:
 
@@ -33,6 +33,10 @@ python3 scripts/dplus/manage-native.py stop
 ```
 
 If you see the application's audio fall silent, first try the `raw --id <ID>` reversal. If a stream has disappeared or been recreated with a new ID, run `list` again to identify the current playing stream. The route helper refuses to move an application from headphones/Bluetooth/HDMI, refuses to move an unnamed or known internal bridge (especially `dplus_preview_to_raw`) into D+ where it could create feedback, and refuses to operate when D+ is duplicated, the native service is inactive, Raw is unavailable, or the global default is not Raw. **Never change the KDE global output to D+ for this test.** Some session managers remember application-specific target selection; route back to Raw before ending the test. The tool does not restore routing automatically after wake or application restart.
+
+### 2026-10-25 — Owner's first Firefox trial
+
+The owner reports **Firefox audio reached D+ but sounded choppy**. Therefore this guide's route feature has been partially demonstrated on hardware, but **acceptable normal-application playback is not yet verified**. If audible stutter occurs, immediately route the same playing stream back to Raw using `python3 scripts/dplus/route-app.py raw --id ID` (obtain current ID from `list`). Leave the global default on Raw. While D+ is choppy, `pw-top -b -n 6` can capture xruns and graph load; do not experiment with global sample-rate or limiter settings before we see these counters.
 
 The routing helper uses only standard Python and `pactl`; its offline safety tests can be run without live audio:
 
