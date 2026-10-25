@@ -156,6 +156,13 @@ class RoutingTests(unittest.TestCase):
             self.run_route(fake,"dplus",app="Firefox")
         self.assertFalse(fake.moves)
 
+    def test_reject_two_dplus_sinks(self):
+        fake=Fake()
+        fake.outputs["input."+R.DPLUS]=5555
+        with self.assertRaisesRegex(R.RouteError,"Two D\+ outputs"):
+            self.run_route(fake,"dplus",app="Firefox")
+        self.assertFalse(fake.moves)
+
     def test_reject_dplus_missing(self):
         fake=Fake()
         del fake.outputs[R.DPLUS]
