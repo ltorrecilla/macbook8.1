@@ -184,6 +184,10 @@ The owner tested normal Firefox playback through the corrected graph under the m
 
 **Next minimal evidence:** while a brief Firefox D+ playback audibly chops, capture `pw-top -b -n 6` (driver/follower ERR= xrun/error counts, W/Q and B/Q budget, graph QUANT and RATE); optionally capture the native service journal. This distinguishes missed processing deadlines from other buffering problems before adjusting node properties, oversampling, sample rates, or PipeWire scheduling. Reverse the stream with `route-app.py raw --id ID` before ending the test. [Issue #39](https://github.com/ltorrecilla/macbook8.1/issues/39) tracks the failure.
 
+### 2026-10-25 — Actual Firefox route: no serial D+ duplication
+
+On the owner MacBook while Firefox D+ is choppy, **Firefox stream 157 was connected to native D+ sink 127 only; D+ return stream 128 fed Raw 64**, with direct FL/FR Firefox links solely into D+. An older EQ bridge `MacBook_Speaker_DSP_Out` also had an output path into Raw (stream 39), but `input.MacBook_Speaker` was IDLE; this constitutes **parallel potential audio**, not an additional serial pass of the Firefox audio through D+. The old FFmpeg D+ user service was inactive and the managed D+ service active. The graph code processes the D+ filter/limiter once per side; dedicated `copy` nodes branch outputs to front and silent rears without repeating EQ. **Do not change DSP or remove old EQ on this evidence**. Current performance gate is still failed due to Firefox choppiness. Next collect `pw-top -b -n 6` *during* the stuttering to inspect ERR/W/Q/B/Q plus quantum/rate before altering PipeWire scheduling or DSP load.
+
 ## Approved D+ v4 reference contract
 
 The owner-supplied `macbook81-dplus-engine-reference.py` (SHA-256 `43da928c7b1b7cd1b1628e47276820dcb2eeeeb841136a425ea25d280ec4076b`) implements:
