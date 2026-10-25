@@ -12,6 +12,7 @@ For the **12-inch Early 2015 MacBook on CachyOS**. These are hardware-specific r
 | Audio | [Recovery for an existing driver](audio-update-recovery.md), [future driver packaging](audio-packaging.md) |
 | Sound processing | [D+ status, verified evidence, roadmap and rollback](dplus-service.md); [offline/isolated technical evidence](dplus-offline-testing.md) |
 - [D+ native user-service trial, safety and rollback](dplus-native-service.md) — opt-in only; hardware test pending.
+- [D+ normal-application routing and safe Raw return](dplus-application-routing.md) — manual one-app trial
 | Battery and sleep | [Unverified EC-wakeup experiment](sleep-battery-drain.md) |
 | Hibernation | [Experimental, machine-specific preparation](hibernation.md) |
 
