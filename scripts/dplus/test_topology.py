@@ -43,10 +43,10 @@ tone=Path(__file__).with_name("audible-check-20s.wav")
 if tone.is_file():
     with wave.open(str(tone),"rb") as w:
         assert (w.getnchannels(),w.getframerate(),w.getsampwidth(),w.getnframes())==(2,48000,2,960000)
+    print("PASS: optional 20s audio sample is correct and bounded")
 else:
     print("SKIP: optional audible test tone not included in repository")
 print("PASS: 4 unique graph outputs with no internal reuse")
 print("PASS: only first-stage copy outputs branch internally")
 print("PASS: original +1 dB DSP, limiter cap and Raw physical target preserved")
-print("PASS: 20s audio sample is correct and bounded")
 print("NOTE: offline topology checks, not a live PipeWire audio test")
