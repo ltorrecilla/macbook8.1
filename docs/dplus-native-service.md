@@ -53,6 +53,19 @@ pactl get-default-sink
 
 After that, verify normal Raw playback. The service has no intentional automatic start or persistent default selection. **Do not enable it** until we verify manual start, audio, stop, login, resume, headphones and fail-closed behavior on the actual MacBook. If `start` initially reports success but the service immediately exits, inspect `journalctl`; it means the preflight or guard refused it.
 
+## Route a normal application without changing the default
+
+With the managed D+ service manually started and Raw globally selected, use the new [one-application routing procedure](dplus-application-routing.md). The helper `scripts/dplus/route-app.py` lists live named application streams, deliberately refuses to move D+'s own output bridge or other unnamed EQ streams, and moves **one playing Firefox stream** to the D+ sink using the PulseAudio-compatible routing interface. Unlike clicking KDE's global output selector, it does **not** call `pactl set-default-sink`. It verifies the route *actually changed* after WirePlumber processes it and refuses Bluetooth/headphone streams or ambiguous Firefox tabs. **18 offline tests pass; this has not yet been confirmed in normal application playback on the MacBook**. Return Firefox to Raw using `raw --id ID` before ending the test; stream IDs change between launches.
+
+```bash
+python3 scripts/dplus/manage-native.py status
+python3 scripts/dplus/route-app.py list
+python3 scripts/dplus/route-app.py dplus --app Firefox
+# When done, while Firefox is still playing, use the ID reported:
+python3 scripts/dplus/route-app.py raw --id ID
+```
+
+Never route the D+ return stream back to D+; the helper explicitly blocks that feedback hazard. Do not enable the service automatically or choose D+ as KDE's global output yet.
 ## Removal
 
 ```bash
