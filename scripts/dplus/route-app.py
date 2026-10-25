@@ -154,6 +154,8 @@ def route(destination: str, *, stream_id: int | None, app: str | None,
     if current_default != RAW:
         raise RouteError(f"Global default is {current_default!r}, not Raw. No change made")
     dplus_name = dplus_sink_name(sinks)
+    if sum(name in sinks for name in DPLUS_ALIASES) > 1:
+        raise RouteError("Two D+ outputs are present; stop duplicate trials before routing")
     if destination == "dplus":
         if not dplus_name:
             raise RouteError("Managed D+ sink not found; run 'manage-native.py start' first")
