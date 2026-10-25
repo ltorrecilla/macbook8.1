@@ -1,6 +1,6 @@
 # MacBook8,1 D+ native user service — opt-in experiment
 
-**Status, 2026-10-25:** the checked-in renderer uses the **exact source bytes** of the first two-stage-copy PipeWire graph that the MacBook owner verified with a tone and a real 30-second music track. This package's **installation, user-service lifecycle, and behavior after sleep are NOT yet verified on that MacBook**. It is a trial, not an enabled default speaker or exact D+ v4 reproduction.
+**Status, 2026-10-25:** the checked-in renderer uses the **exact source bytes** of the first two-stage-copy PipeWire graph that the MacBook owner verified with a tone and a real 30-second music track. The owner has now confirmed an **audible D+ tone through the manually started user service**; service stop/cleanup, long-running behavior and sleep recovery are **not yet verified on that MacBook**. It is a trial, not an enabled default speaker or exact D+ v4 reproduction.
 
 ## Safety and scope
 
@@ -23,6 +23,10 @@ python3 scripts/dplus/manage-native.py status
 ```
 
 `install` writes only its private user configuration, a checksum manifest, a small runtime supervisor and the named systemd user unit; any existing file at its managed paths makes installation refuse overwriting. `check` only validates the private profile and graph and writes nothing. The source generator is SHA-256 pinned to the owner-audible revision.
+
+## Owner acceptance checkpoint — 2026-10-25
+
+Owner reports they **heard the 20-second test tone via the managed D+ service** after installation/manual start. Only that direct-audio milestone is confirmed. Before proceeding to ordinary app routing, validate the service `status`, `stop`, Raw playback/rollback, and a second manual start. Do not enable it automatically.
 
 ## First MANUAL service trial
 
