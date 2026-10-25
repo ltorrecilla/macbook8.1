@@ -34,10 +34,10 @@ python3 scripts/dplus/manage-native.py status
 journalctl --user -u macbook81-dplus-native.service -n 60 --no-pager
 ```
 
-The service saying *sink registered* is **NOT** evidence of working PCM. For acceptance, play the already-known, 30-second WAV through it and listen:
+The service saying *sink registered* is **NOT** evidence of working PCM. For acceptance, play the previously audible 20-second tone from the earlier proven preview through it and listen:
 
 ```bash
-pw-play --target=MacBook_Speaker_D_Preview scripts/dplus/audible-check-20s.wav
+pw-play --target=MacBook_Speaker_D_Preview ~/Downloads/dplus-topology/audible-check-20s.wav
 ```
 
 Stop and verify rollback:
