@@ -1,6 +1,6 @@
 # D+ Clarity v4 — status, evidence, and delivery roadmap
 
-**Updated 2026-10-23 · MacBook8,1 (Early 2015) / CachyOS · [Tracking issue #39](https://github.com/ltorrecilla/macbook8.1/issues/39)**
+**Updated 2026-10-25 · MacBook8,1 (Early 2015) / CachyOS · [Tracking issue #39](https://github.com/ltorrecilla/macbook8.1/issues/39)**
 
 **Goal:** make D+ the automatic, reliable **internal-speaker** output while retaining `MacBook_Speaker_Raw` and the existing patched CS4208 driver as a recoverable base. Deliver actual sound and working A/V synchronization before promoting D+ to the default. **No production-ready D+ implementation or new kernel driver has been released.**
 
@@ -165,6 +165,10 @@ Owner reports **“works”** after using the existing `dplus-topology-preview.p
 **Boundaries:** the ephemeral preview is not a supported always-on product. Its direct `pw-play` route bypasses KDE. Normal-app routing, relative loudness, full D+ v4 limiter dynamics, long-session A/V sync, default-device safety, sleep recovery and recovery from PipeWire/WirePlumber restarts are not validated for this corrected graph. Earlier resume candidates had broken graph topology and must not be promoted.
 
 **Delivery plan:** (1) capture the working generated filter-chain topology into an installed, managed, persistent *user-session* PipeWire unit with the same Raw playback target and safe stop/cleanup; (2) verify ordinary per-app music/video with Raw system default, and one wake without moving the global default; (3) implement an opt-in WirePlumber speaker-default strategy that avoids feedback and respects headphones/Bluetooth, with rollback; (4) build a GUI installer with safe Test/Enable/Use Raw/Restore controls, rather than requiring terminal interaction. The known-good Raw and the disabled legacy FFmpeg D+ bridge remain preserved.
+
+### 2026-10-25 — Pinned native user-service candidate in GitHub
+
+The exactly owner-audible corrected graph source is now in `scripts/dplus/dplus-topology-preview.py`, pinned by SHA-256 `105a8bd171248a1ec0707bfc552d8dfebe4bdd8f65873af071f67e190c8862c2`. A new `scripts/dplus/manage-native.py` locally renders the DSP config from the private profile and installs an **off-by-default** supervised `macbook81-dplus-native.service`. The service keeps the Raw-targeted processing client alive across terminal closure when manually started, has `Restart=no`, and stops rather than changing the global default or connecting to an unexpected sink. Eight simulated install/rollback/graph tests passed. This implementation has **not** yet passed the first manual `start`/sound/`stop` acceptance test on the MacBook, and **does not** provide reliable resume or automatic default selection yet. It neither modifies the patched HDA driver nor commits the private reference profile. Full instructions: [native D+ service and removal](dplus-native-service.md). Issue #39 tracks the remaining hardware gates.
 
 ## Approved D+ v4 reference contract
 
